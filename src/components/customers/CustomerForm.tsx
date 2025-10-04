@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -18,6 +18,8 @@ import { FormInput } from '@/components/ui/form-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DraftRestoreDialog } from '@/components/ui/draft-restore-dialog'
+import { KeyboardHint } from '@/components/ui/keyboard-hint'
+import { FormProgress } from '@/components/ui/form-progress'
 import { Customer } from '@/generated/prisma'
 
 interface CustomerFormProps {
@@ -101,6 +103,12 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
   const pincode = watch('pincode')
   useAutoSaveDefaults({ city, state, pincode })
 
+  // Calculate form progress (required field: name only)
+  const name = watch('name')
+  const formProgress = React.useMemo(() => {
+    return name ? 100 : 0
+  }, [name])
+
   // Check for draft on mount (only for create mode)
   useEffect(() => {
     if (mode === 'create' && !customer) {
@@ -124,6 +132,39 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
     clearDraft()
     setShowDraftDialog(false)
   }
+
+  // Form submit handler
+  const onSubmit = useCallback(async (data: CustomerInput) => {
+    try {
+      if (mode === 'create') {
+        await createCustomer.mutateAsync(data)
+        clearDraft() // Clear draft on successful creation
+        toast.success(tMessages('createSuccess'))
+        router.push('/customers')
+      } else if (customer) {
+        await updateCustomer.mutateAsync({ id: customer.id, data })
+        toast.success(tMessages('updateSuccess'))
+        router.push('/customers')
+      }
+    } catch (error) {
+      // Handle validation errors
+      if (error && typeof error === 'object' && 'error' in error) {
+        const apiError = error as { error: string; fields?: Array<{ path: string; code: string }> }
+
+        if (apiError.error === 'validation_error' && apiError.fields) {
+          apiError.fields.forEach((field) => {
+            toast.error(`${field.path}: ${tValidation(field.code)}`)
+          })
+        } else if (apiError.error === 'duplicate_error') {
+          toast.error(tValidation('duplicateError'))
+        } else {
+          toast.error(tMessages('createError'))
+        }
+      } else {
+        toast.error(tMessages('createError'))
+      }
+    }
+  }, [mode, customer, createCustomer, updateCustomer, clearDraft, tMessages, tValidation, router])
 
   // Unsaved changes warning
   useEffect(() => {
@@ -161,60 +202,34 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isDirty, router])
-
-  const onSubmit = async (data: CustomerInput) => {
-    try {
-      if (mode === 'create') {
-        await createCustomer.mutateAsync(data)
-        clearDraft() // Clear draft on successful creation
-        toast.success(tMessages('createSuccess'))
-        router.push('/customers')
-      } else if (customer) {
-        await updateCustomer.mutateAsync({ id: customer.id, data })
-        toast.success(tMessages('updateSuccess'))
-        router.push('/customers')
-      }
-    } catch (error) {
-      // Handle validation errors
-      if (error && typeof error === 'object' && 'error' in error) {
-        const apiError = error as { error: string; fields?: Array<{ path: string; code: string }> }
-
-        if (apiError.error === 'validation_error' && apiError.fields) {
-          apiError.fields.forEach((field) => {
-            toast.error(`${field.path}: ${tValidation(field.code)}`)
-          })
-        } else if (apiError.error === 'duplicate_error') {
-          toast.error(tValidation('duplicateError'))
-        } else {
-          toast.error(tMessages('createError'))
-        }
-      } else {
-        toast.error(tMessages('createError'))
-      }
-    }
-  }
+  }, [isDirty, router, handleSubmit, onSubmit])
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Basic Information */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('form.basicInfo') || 'Basic Information'}</CardTitle>
+        <CardHeader className="relative">
+          {mode === 'create' && (
+            <div className="absolute top-0 right-6">
+              <FormProgress progress={formProgress} />
+            </div>
+          )}
+          <CardTitle>{t('form.basicInfo') || 'Basic Information'}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label htmlFor="name">
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="name" className="text-sm font-semibold text-foreground">
                 {t('name')} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 {...register('name')}
+                placeholder="Enter customer name"
                 className={errors.name && 'border-destructive'}
               />
               {errors.name && (
-                <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.name.message}</p>
               )}
             </div>
 
@@ -245,39 +260,39 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
       {/* Contact Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t('form.contactInfo') || 'Contact Information'}</CardTitle>
+          <CardTitle>{t('form.contactInfo') || 'Contact Information'}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label htmlFor="contactPerson">{t('contactPerson')}</Label>
-              <Input id="contactPerson" {...register('contactPerson')} />
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="contactPerson" className="text-sm font-semibold text-foreground">{t('contactPerson')}</Label>
+              <Input id="contactPerson" {...register('contactPerson')} placeholder="Enter contact person name" />
               {errors.contactPerson && (
-                <p className="text-xs text-destructive mt-1">{errors.contactPerson.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.contactPerson.message}</p>
               )}
             </div>
 
-            <div className="sm:col-span-2">
-              <Label htmlFor="address">{t('address')}</Label>
-              <Input id="address" {...register('address')} />
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="address" className="text-sm font-semibold text-foreground">{t('address')}</Label>
+              <Input id="address" {...register('address')} placeholder="Enter address" />
               {errors.address && (
-                <p className="text-xs text-destructive mt-1">{errors.address.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.address.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="city">{t('city')}</Label>
-              <Input id="city" {...register('city')} />
+            <div className="space-y-2.5">
+              <Label htmlFor="city" className="text-sm font-semibold text-foreground">{t('city')}</Label>
+              <Input id="city" {...register('city')} placeholder="Enter city" />
               {errors.city && (
-                <p className="text-xs text-destructive mt-1">{errors.city.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.city.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="state">{t('state')}</Label>
-              <Input id="state" {...register('state')} />
+            <div className="space-y-2.5">
+              <Label htmlFor="state" className="text-sm font-semibold text-foreground">{t('state')}</Label>
+              <Input id="state" {...register('state')} placeholder="Enter state" />
               {errors.state && (
-                <p className="text-xs text-destructive mt-1">{errors.state.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.state.message}</p>
               )}
             </div>
 
@@ -291,19 +306,19 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
               placeholder="123456"
             />
 
-            <div>
-              <Label htmlFor="phone">{t('phone')}</Label>
+            <div className="space-y-2.5">
+              <Label htmlFor="phone" className="text-sm font-semibold text-foreground">{t('phone')}</Label>
               <Input id="phone" {...register('phone')} placeholder="9876543210" />
               {errors.phone && (
-                <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.phone.message}</p>
               )}
             </div>
 
-            <div className="sm:col-span-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input id="email" type="email" {...register('email')} />
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="email" className="text-sm font-semibold text-foreground">{t('email')}</Label>
+              <Input id="email" type="email" {...register('email')} placeholder="email@example.com" />
               {errors.email && (
-                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.email.message}</p>
               )}
             </div>
           </div>
@@ -311,14 +326,15 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
       </Card>
 
       {/* Form Actions */}
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading}>
+      <div className="flex gap-4 pt-4">
+        <Button type="submit" disabled={isLoading} className="h-11 px-8">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {tCommon('save')}
         </Button>
         <Button
           type="button"
           variant="outline"
+          className="h-11 px-8"
           onClick={() => {
             if (isDirty) {
               if (window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
@@ -334,9 +350,7 @@ export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
       </div>
 
       {/* Keyboard shortcuts hint */}
-      <p className="text-xs text-muted-foreground">
-        Tip: Press <kbd className="px-1.5 py-0.5 bg-muted rounded">Cmd/Ctrl + S</kbd> to save, <kbd className="px-1.5 py-0.5 bg-muted rounded">Esc</kbd> to cancel
-      </p>
+      <KeyboardHint />
 
       {/* Draft Restore Dialog */}
       <DraftRestoreDialog

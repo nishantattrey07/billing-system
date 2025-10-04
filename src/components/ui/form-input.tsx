@@ -78,9 +78,15 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
     }
 
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-2.5">
         {label && (
-          <Label htmlFor={props.id} className={cn(error && 'text-destructive')}>
+          <Label
+            htmlFor={props.id}
+            className={cn(
+              "text-sm font-semibold text-foreground",
+              error && 'text-destructive'
+            )}
+          >
             {label}
             {props.required && <span className="text-destructive ml-1">*</span>}
           </Label>
@@ -93,11 +99,11 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
           {...props}
         />
         {detectedState && (
-          <p className="text-xs text-muted-foreground">
-            State detected: <span className="font-medium">{detectedState}</span>
+          <p className="text-xs text-muted-foreground font-medium mt-1.5">
+            State detected: <span className="text-foreground font-semibold">{detectedState}</span>
           </p>
         )}
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive font-medium mt-1.5">{error}</p>}
       </div>
     )
   }

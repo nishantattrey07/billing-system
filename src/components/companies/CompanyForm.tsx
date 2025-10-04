@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -18,6 +18,8 @@ import { FormInput } from '@/components/ui/form-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DraftRestoreDialog } from '@/components/ui/draft-restore-dialog'
+import { KeyboardHint } from '@/components/ui/keyboard-hint'
+import { FormProgress } from '@/components/ui/form-progress'
 import { Company } from '@/generated/prisma'
 
 interface CompanyFormProps {
@@ -107,6 +109,15 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
   const pincode = watch('pincode')
   useAutoSaveDefaults({ city, state, pincode })
 
+  // Calculate form progress (required fields: name, gstin)
+  const name = watch('name')
+  const gstin = watch('gstin')
+  const formProgress = React.useMemo(() => {
+    const requiredFields = { name, gstin }
+    const filledFields = Object.values(requiredFields).filter(Boolean).length
+    return (filledFields / Object.keys(requiredFields).length) * 100
+  }, [name, gstin])
+
   // Check for draft on mount (only for create mode)
   useEffect(() => {
     if (mode === 'create' && !company) {
@@ -130,6 +141,39 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
     clearDraft()
     setShowDraftDialog(false)
   }
+
+  // Form submit handler
+  const onSubmit = useCallback(async (data: CompanyInput) => {
+    try {
+      if (mode === 'create') {
+        await createCompany.mutateAsync(data)
+        clearDraft() // Clear draft on successful creation
+        toast.success(tMessages('createSuccess'))
+        router.push('/companies')
+      } else if (company) {
+        await updateCompany.mutateAsync({ id: company.id, data })
+        toast.success(tMessages('updateSuccess'))
+        router.push('/companies')
+      }
+    } catch (error) {
+      // Handle validation errors
+      if (error && typeof error === 'object' && 'error' in error) {
+        const apiError = error as { error: string; fields?: Array<{ path: string; code: string }> }
+
+        if (apiError.error === 'validation_error' && apiError.fields) {
+          apiError.fields.forEach((field) => {
+            toast.error(`${field.path}: ${tValidation(field.code)}`)
+          })
+        } else if (apiError.error === 'duplicate_error') {
+          toast.error(tValidation('duplicateGSTIN'))
+        } else {
+          toast.error(tMessages('createError'))
+        }
+      } else {
+        toast.error(tMessages('createError'))
+      }
+    }
+  }, [mode, company, createCompany, updateCompany, clearDraft, tMessages, tValidation, router])
 
   // Unsaved changes warning
   useEffect(() => {
@@ -167,60 +211,34 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isDirty, router])
-
-  const onSubmit = async (data: CompanyInput) => {
-    try {
-      if (mode === 'create') {
-        await createCompany.mutateAsync(data)
-        clearDraft() // Clear draft on successful creation
-        toast.success(tMessages('createSuccess'))
-        router.push('/companies')
-      } else if (company) {
-        await updateCompany.mutateAsync({ id: company.id, data })
-        toast.success(tMessages('updateSuccess'))
-        router.push('/companies')
-      }
-    } catch (error) {
-      // Handle validation errors
-      if (error && typeof error === 'object' && 'error' in error) {
-        const apiError = error as { error: string; fields?: Array<{ path: string; code: string }> }
-
-        if (apiError.error === 'validation_error' && apiError.fields) {
-          apiError.fields.forEach((field) => {
-            toast.error(`${field.path}: ${tValidation(field.code)}`)
-          })
-        } else if (apiError.error === 'duplicate_error') {
-          toast.error(tValidation('duplicateGSTIN'))
-        } else {
-          toast.error(tMessages('createError'))
-        }
-      } else {
-        toast.error(tMessages('createError'))
-      }
-    }
-  }
+  }, [isDirty, router, handleSubmit, onSubmit])
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Basic Information */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('form.basicInfo') || 'Basic Information'}</CardTitle>
+        <CardHeader className="relative">
+          {mode === 'create' && (
+            <div className="absolute top-0 right-6">
+              <FormProgress progress={formProgress} />
+            </div>
+          )}
+          <CardTitle>{t('form.basicInfo') || 'Basic Information'}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label htmlFor="name">
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="name" className="text-sm font-semibold text-foreground">
                 {t('name')} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 {...register('name')}
+                placeholder="Enter company name"
                 className={errors.name && 'border-destructive'}
               />
               {errors.name && (
-                <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.name.message}</p>
               )}
             </div>
 
@@ -252,31 +270,31 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
       {/* Contact Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t('form.contactInfo') || 'Contact Information'}</CardTitle>
+          <CardTitle>{t('form.contactInfo') || 'Contact Information'}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label htmlFor="address">{t('address')}</Label>
-              <Input id="address" {...register('address')} />
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="address" className="text-sm font-semibold text-foreground">{t('address')}</Label>
+              <Input id="address" {...register('address')} placeholder="Enter address" />
               {errors.address && (
-                <p className="text-xs text-destructive mt-1">{errors.address.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.address.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="city">{t('city')}</Label>
-              <Input id="city" {...register('city')} />
+            <div className="space-y-2.5">
+              <Label htmlFor="city" className="text-sm font-semibold text-foreground">{t('city')}</Label>
+              <Input id="city" {...register('city')} placeholder="Enter city" />
               {errors.city && (
-                <p className="text-xs text-destructive mt-1">{errors.city.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.city.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="state">{t('state')}</Label>
-              <Input id="state" {...register('state')} />
+            <div className="space-y-2.5">
+              <Label htmlFor="state" className="text-sm font-semibold text-foreground">{t('state')}</Label>
+              <Input id="state" {...register('state')} placeholder="Enter state" />
               {errors.state && (
-                <p className="text-xs text-destructive mt-1">{errors.state.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.state.message}</p>
               )}
             </div>
 
@@ -300,11 +318,11 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
               placeholder="98765-43210"
             />
 
-            <div className="sm:col-span-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input id="email" type="email" {...register('email')} />
+            <div className="sm:col-span-2 space-y-2.5">
+              <Label htmlFor="email" className="text-sm font-semibold text-foreground">{t('email')}</Label>
+              <Input id="email" type="email" {...register('email')} placeholder="email@company.com" />
               {errors.email && (
-                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.email.message}</p>
               )}
             </div>
           </div>
@@ -314,23 +332,23 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
       {/* Bank Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t('form.bankInfo') || 'Bank Information'}</CardTitle>
+          <CardTitle>{t('form.bankInfo') || 'Bank Information'}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="bankName">{t('bankName')}</Label>
-              <Input id="bankName" {...register('bankName')} />
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2.5">
+              <Label htmlFor="bankName" className="text-sm font-semibold text-foreground">{t('bankName')}</Label>
+              <Input id="bankName" {...register('bankName')} placeholder="Enter bank name" />
               {errors.bankName && (
-                <p className="text-xs text-destructive mt-1">{errors.bankName.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.bankName.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="accountNumber">{t('accountNumber')}</Label>
-              <Input id="accountNumber" {...register('accountNumber')} />
+            <div className="space-y-2.5">
+              <Label htmlFor="accountNumber" className="text-sm font-semibold text-foreground">{t('accountNumber')}</Label>
+              <Input id="accountNumber" {...register('accountNumber')} placeholder="Enter account number" />
               {errors.accountNumber && (
-                <p className="text-xs text-destructive mt-1">{errors.accountNumber.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.accountNumber.message}</p>
               )}
             </div>
 
@@ -344,11 +362,11 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
               placeholder="SBIN0001234"
             />
 
-            <div>
-              <Label htmlFor="branch">{t('branch')}</Label>
-              <Input id="branch" {...register('branch')} />
+            <div className="space-y-2.5">
+              <Label htmlFor="branch" className="text-sm font-semibold text-foreground">{t('branch')}</Label>
+              <Input id="branch" {...register('branch')} placeholder="Enter branch name" />
               {errors.branch && (
-                <p className="text-xs text-destructive mt-1">{errors.branch.message}</p>
+                <p className="text-xs text-destructive mt-1.5 font-medium">{errors.branch.message}</p>
               )}
             </div>
           </div>
@@ -356,14 +374,15 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
       </Card>
 
       {/* Form Actions */}
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading}>
+      <div className="flex gap-4 pt-4">
+        <Button type="submit" disabled={isLoading} className="h-11 px-8">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {tCommon('save')}
         </Button>
         <Button
           type="button"
           variant="outline"
+          className="h-11 px-8"
           onClick={() => {
             if (isDirty) {
               if (window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
@@ -379,9 +398,7 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
       </div>
 
       {/* Keyboard shortcuts hint */}
-      <p className="text-xs text-muted-foreground">
-        Tip: Press <kbd className="px-1.5 py-0.5 bg-muted rounded">Cmd/Ctrl + S</kbd> to save, <kbd className="px-1.5 py-0.5 bg-muted rounded">Esc</kbd> to cancel
-      </p>
+      <KeyboardHint />
 
       {/* Draft Restore Dialog */}
       <DraftRestoreDialog

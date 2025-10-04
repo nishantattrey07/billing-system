@@ -58,5 +58,5 @@ export function useAutoSaveDefaults(values: { city?: string; state?: string; pin
     }, 1000) // Debounce for 1 second
 
     return () => clearTimeout(timeout)
-  }, [values.city, values.state, values.pincode, saveDefaults])
+  }, [values, saveDefaults])
 }
