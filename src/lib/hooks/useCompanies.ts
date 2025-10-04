@@ -83,12 +83,18 @@ export function useCreateCompany() {
 
       return result.data
     },
-    onSuccess: () => {
-      
+    onSuccess: (newCompany) => {
+      // Optimistic update - add to cache immediately
+      queryClient.setQueryData(['companies', 'all'], (oldData: Company[] | undefined) => {
+        if (!oldData) return [newCompany]
+        return [newCompany, ...oldData]
+      })
+
+      // Invalidate in background (non-blocking)
       queryClient.invalidateQueries({ queryKey: ['companies'] })
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // No retry for creates - fail fast
+    retry: false,
   })
 }
 
@@ -113,11 +119,9 @@ export function useUpdateCompany() {
       return result.data
     },
     onSuccess: (_, variables) => {
-
       queryClient.invalidateQueries({ queryKey: ['company', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['companies'] })
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: false,
   })
 }

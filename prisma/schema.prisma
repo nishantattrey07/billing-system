@@ -24,6 +24,7 @@ enum DocumentStatus {
 
 model Company {
   id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid @map("user_id") // Creator/owner for audit trail
   name          String
   gstin         String   @unique // ← Add unique constraint
   pan           String?
@@ -44,12 +45,14 @@ model Company {
   invoices   Invoice[]
   challans   Challan[]
 
-  @@index([name, gstin, city]) // ← Add for search performance
+  @@index([userId, createdAt]) // For fetching user's companies
+  @@index([name, gstin, city]) // For search performance
   @@map("companies")
 }
 
 model Customer {
   id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid @map("user_id") // Creator/owner for audit trail
   name          String
   gstin         String?  @unique // ← Unique but nullable (for B2C)
   pan           String?
@@ -67,7 +70,8 @@ model Customer {
   invoices   Invoice[]
   challans   Challan[]
 
-  @@index([name, city, contactPerson]) // ← Add for search
+  @@index([userId, createdAt]) // For fetching user's customers
+  @@index([name, city, contactPerson]) // For search
   @@map("customers")
 }
 

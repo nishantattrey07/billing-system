@@ -17,7 +17,9 @@ import { cn } from "@/lib/utils";
 import { Building2, Check, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CompanySelectorProps {
   compact?: boolean; // For mobile view
@@ -27,35 +29,61 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
   const { data: companies, isLoading, isError } = useAllCompanies();
-  const { selectedCompanyId, setSelectedCompanyId } = useStore();
+  const { selectedCompanyId, selectedCompany, setSelectedCompany } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const hasInitialized = useRef(false);
+  const queryClient = useQueryClient();
 
-  // Auto-selection logic
+  // Debounce search term (300ms delay)
   useEffect(() => {
-    if (!companies || companies.length === 0) return;
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-    // If no company selected, select the first one
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Auto-selection logic - only runs once on mount
+  useEffect(() => {
+    if (!companies || companies.length === 0 || hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    // If no company selected from persisted state, select the first one
     if (!selectedCompanyId) {
-      setSelectedCompanyId(companies[0].id);
+      setSelectedCompany(companies[0]);
       return;
     }
 
     // Verify selected company still exists
-    const companyExists = companies.some((c) => c.id === selectedCompanyId);
+    const companyExists = companies.find((c) => c.id === selectedCompanyId);
     if (!companyExists) {
       // Selected company no longer exists, select first available
-      setSelectedCompanyId(companies[0].id);
+      setSelectedCompany(companies[0]);
+    } else if (!selectedCompany || selectedCompany.id !== selectedCompanyId) {
+      // Update full company object if only ID is persisted
+      setSelectedCompany(companyExists);
     }
-  }, [companies, selectedCompanyId, setSelectedCompanyId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companies]);
 
-  const selectedCompany = companies?.find((c) => c.id === selectedCompanyId);
+  const currentCompany = selectedCompany || companies?.find((c) => c.id === selectedCompanyId);
 
-  // Filter companies based on search
+  // Filter companies based on debounced search term
   const filteredCompanies = companies?.filter(
     (company) =>
-      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.gstin.toLowerCase().includes(searchTerm.toLowerCase())
+      company.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      company.gstin.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
+
+  // Handle company selection
+  const handleCompanySelect = (company: typeof companies[0]) => {
+    setSelectedCompany(company);
+    setSearchTerm("");
+    toast.success(`Switched to ${company.name}`);
+    // Invalidate stats to force fresh fetch
+    queryClient.invalidateQueries({ queryKey: ['stats'] });
+  };
 
   // Loading state
   if (isLoading) {
@@ -76,7 +104,7 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
     return (
       <div className="flex items-center gap-2">
         <Button variant="outline" size={compact ? "icon" : "default"} asChild>
-          <Link href="/dashboard/companies">
+          <Link href="/companies/new">
             <Building2 className="h-4 w-4" />
             {!compact && <span className="ml-2">{t("selectCompany")}</span>}
           </Link>
@@ -96,9 +124,9 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
             className="h-10 w-10"
             aria-label={t("selectCompany")}
           >
-            {selectedCompany ? (
+            {currentCompany ? (
               <span className="text-sm font-semibold">
-                {selectedCompany.name.charAt(0).toUpperCase()}
+                {currentCompany.name.charAt(0).toUpperCase()}
               </span>
             ) : (
               <Building2 className="h-4 w-4" />
@@ -122,10 +150,7 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
               filteredCompanies.map((company) => (
                 <DropdownMenuItem
                   key={company.id}
-                  onClick={() => {
-                    setSelectedCompanyId(company.id);
-                    setSearchTerm("");
-                  }}
+                  onClick={() => handleCompanySelect(company)}
                   className="cursor-pointer"
                 >
                   <Check
@@ -160,10 +185,10 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-[250px] justify-between">
-          {selectedCompany ? (
+          {currentCompany ? (
             <div className="flex items-center gap-2 truncate">
               <Building2 className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{selectedCompany.name}</span>
+              <span className="truncate">{currentCompany.name}</span>
             </div>
           ) : (
             <span>{t("selectCompany")}</span>
@@ -188,10 +213,7 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
             filteredCompanies.map((company) => (
               <DropdownMenuItem
                 key={company.id}
-                onClick={() => {
-                  setSelectedCompanyId(company.id);
-                  setSearchTerm("");
-                }}
+                onClick={() => handleCompanySelect(company)}
                 className="cursor-pointer"
               >
                 <Check

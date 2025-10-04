@@ -65,10 +65,11 @@ export function useCreateCustomer() {
       return result.data
     },
     onSuccess: () => {
+      // Invalidate in background (non-blocking)
       queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // No retry for creates - fail fast
+    retry: false,
   })
 }
 
@@ -93,11 +94,9 @@ export function useUpdateCustomer() {
       return result.data
     },
     onSuccess: (_, variables) => {
-      
       queryClient.invalidateQueries({ queryKey: ['customer', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: false,
   })
 }

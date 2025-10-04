@@ -3,12 +3,17 @@ import { prisma } from '@/lib/prisma'
 import { companySchema } from '@/lib/validation/schemas/company.schema'
 import { handleApiError, successResponse } from '@/lib/api/error-handler'
 import { convertEmptyStringsToUndefined } from '@/lib/api/transform-data'
+import { requireAuth } from '@/lib/api/auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const { user, error } = await requireAuth(request)
+    if (error) return error
+
     const { id } = await params
 
     const company = await prisma.company.findUnique({
@@ -31,6 +36,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const { user, error } = await requireAuth(request)
+    if (error) return error
+
     const { id } = await params
     const body = await request.json()
 

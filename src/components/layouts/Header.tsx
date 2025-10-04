@@ -51,12 +51,9 @@ export function Header({ user, onMenuClick, showMenuButton }: HeaderProps) {
         </Button>
       )}
 
-      {/* Company Selector - Full on Desktop, Compact on Mobile */}
+      {/* Company Selector - Desktop Only */}
       <div className="hidden md:block">
         <CompanySelector />
-      </div>
-      <div className="block md:hidden">
-        <CompanySelector compact />
       </div>
 
       <div className="flex-1" />

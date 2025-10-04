@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { customerSchema } from '@/lib/validation/schemas/customer.schema'
 import { handleApiError, successResponse } from '@/lib/api/error-handler'
 import { convertEmptyStringsToUndefined } from '@/lib/api/transform-data'
+import { requireAuth } from '@/lib/api/auth'
 
 
 export async function GET(
@@ -10,6 +11,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const { user, error } = await requireAuth(request)
+    if (error) return error
+
     const { id } = await params
 
     const customer = await prisma.customer.findUnique({
@@ -32,6 +37,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const { user, error } = await requireAuth(request)
+    if (error) return error
+
     const { id } = await params
     const body = await request.json()
 

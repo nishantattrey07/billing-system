@@ -2,6 +2,8 @@
 
 import { CompanySelector } from "@/components/layouts/CompanySelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useStats } from "@/lib/hooks/useStats";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -24,12 +26,8 @@ export default function DashboardPage() {
   const tInvoice = useTranslations("invoice");
   const tChallan = useTranslations("challan");
 
-  // TODO: Replace with actual data from API
-  const stats = {
-    quotations: 12,
-    invoices: 15,
-    challans: 8,
-  };
+  // Fetch real stats data
+  const { data: stats, isLoading } = useStats();
 
   const quickActions = [
     {
@@ -73,41 +71,52 @@ export default function DashboardPage() {
 
       {/* Stats Overview - Minimal Cards */}
       <div className="grid grid-cols-3 gap-3">
-        {[
-          {
-            count: stats.quotations,
-            label: tStats("quotations"),
-            color: "text-blue-600 dark:text-blue-400",
-          },
-          {
-            count: stats.challans,
-            label: tStats("challans"),
-            color: "text-purple-600 dark:text-purple-400",
-          },
-          {
-            count: stats.invoices,
-            label: tStats("invoices"),
-            color: "text-green-600 dark:text-green-400",
-          },
-        ].map((stat, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className="border-border/40 shadow-sm">
-              <CardContent className="pt-5 pb-4 text-center">
-                <div className={`text-2xl font-semibold ${stat.color}`}>
-                  {stat.count}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stat.label}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+        {isLoading
+          ? // Loading state
+            Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="border-border/40 shadow-sm">
+                <CardContent className="pt-5 pb-4 text-center">
+                  <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                </CardContent>
+              </Card>
+            ))
+          : // Data loaded or error - show zeros if no data
+            [
+              {
+                count: stats?.quotations?.total ?? 0,
+                label: tStats("quotations"),
+                color: "text-blue-600 dark:text-blue-400",
+              },
+              {
+                count: stats?.challans?.total ?? 0,
+                label: tStats("challans"),
+                color: "text-purple-600 dark:text-purple-400",
+              },
+              {
+                count: stats?.invoices?.total ?? 0,
+                label: tStats("invoices"),
+                color: "text-green-600 dark:text-green-400",
+              },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="border-border/40 shadow-sm">
+                  <CardContent className="pt-5 pb-4 text-center">
+                    <div className={`text-2xl font-semibold ${stat.color}`}>
+                      {stat.count}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stat.label}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
       </div>
 
       {/* Quick Actions - Premium Minimal Design */}

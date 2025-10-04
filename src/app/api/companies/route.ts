@@ -4,10 +4,15 @@ import { companySchema } from '@/lib/validation/schemas/company.schema'
 import { handleApiError, successResponse } from '@/lib/api/error-handler'
 import { parsePaginationParams, processCursorPagination } from '@/lib/api/cursor-pagination'
 import { convertEmptyStringsToUndefined } from '@/lib/api/transform-data'
+import { requireAuth } from '@/lib/api/auth'
 
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication
+    const { user, error } = await requireAuth(request)
+    if (error) return error
+
     const { searchParams } = new URL(request.url)
     const { cursor, limit = 20, search } = parsePaginationParams(searchParams)
 
@@ -42,9 +47,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const { user, error } = await requireAuth(request)
+    if (error) return error
+
     const body = await request.json()
 
-    
+
     const result = companySchema.safeParse(body)
 
     if (!result.success) {
@@ -53,9 +62,12 @@ export async function POST(request: NextRequest) {
 
     const data = convertEmptyStringsToUndefined(result.data)
 
-
+    // Auto-inject userId (user doesn't need to provide it)
     const company = await prisma.company.create({
-      data,
+      data: {
+        ...data,
+        userId: user!.id,
+      },
     })
 
     return successResponse(company, 201)
