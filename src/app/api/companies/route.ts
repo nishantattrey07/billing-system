@@ -10,7 +10,7 @@ import { requireAuth } from '@/lib/api/auth'
 export async function GET(request: NextRequest) {
   try {
     // Require authentication
-    const { user, error } = await requireAuth(request)
+    const { error } = await requireAuth()
     if (error) return error
 
     const { searchParams } = new URL(request.url)
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    const { user, error } = await requireAuth(request)
+    const { user, error } = await requireAuth()
     if (error) return error
 
     const body = await request.json()

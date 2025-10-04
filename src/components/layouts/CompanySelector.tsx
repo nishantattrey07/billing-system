@@ -20,6 +20,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { Company } from "@/generated/prisma";
 
 interface CompanySelectorProps {
   compact?: boolean; // For mobile view
@@ -77,7 +78,7 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
   );
 
   // Handle company selection
-  const handleCompanySelect = (company: typeof companies[0]) => {
+  const handleCompanySelect = (company: Company) => {
     setSelectedCompany(company);
     setSearchTerm("");
     toast.success(`Switched to ${company.name}`);

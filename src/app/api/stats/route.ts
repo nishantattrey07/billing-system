@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     // Require authentication
-    const { user, error } = await requireAuth(request)
+    const { error } = await requireAuth()
     if (error) return error
 
     const { searchParams } = new URL(request.url)

@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     // Require authentication
-    const { user, error } = await requireAuth(request)
+    const { error } = await requireAuth()
     if (error) return error
 
     const { id } = await params
@@ -37,7 +37,7 @@ export async function PUT(
 ) {
   try {
     // Require authentication
-    const { user, error } = await requireAuth(request)
+    const { error } = await requireAuth()
     if (error) return error
 
     const { id } = await params

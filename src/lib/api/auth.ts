@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 /**
  * Auth middleware - Verifies user is authenticated
  * Returns user object if authenticated, null if not
  */
-export async function getAuthenticatedUser(request: NextRequest) {
+export async function getAuthenticatedUser() {
   const supabase = await createClient() // createClient is async
   const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -19,8 +19,8 @@ export async function getAuthenticatedUser(request: NextRequest) {
 /**
  * Requires authentication - Returns 401 response if not authenticated
  */
-export async function requireAuth(request: NextRequest) {
-  const user = await getAuthenticatedUser(request)
+export async function requireAuth() {
+  const user = await getAuthenticatedUser()
 
   if (!user) {
     return {
