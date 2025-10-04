@@ -48,6 +48,7 @@
     "state": "State",
     "pincode": "Pincode",
     "phone": "Phone",
+    "switchedTo": "Switched to {companyName}",
     "email": "Email",
     "bankName": "Bank Name",
     "accountNumber": "Account Number",

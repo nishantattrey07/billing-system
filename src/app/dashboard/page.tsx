@@ -69,34 +69,80 @@ export default function DashboardPage() {
         <CompanySelector />
       </div>
 
-      {/* Stats Overview - Minimal Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Stats Overview - Responsive: Detailed on Desktop, Simple on Mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {isLoading
           ? // Loading state
             Array.from({ length: 3 }).map((_, index) => (
               <Card key={index} className="border-border/40 shadow-sm">
-                <CardContent className="pt-5 pb-4 text-center">
-                  <Skeleton className="h-8 w-12 mx-auto mb-2" />
-                  <Skeleton className="h-4 w-20 mx-auto" />
+                <CardContent className="pt-5 pb-4">
+                  <div className="md:hidden text-center">
+                    {/* Mobile loading */}
+                    <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                    <Skeleton className="h-4 w-20 mx-auto" />
+                  </div>
+                  <div className="hidden md:block">
+                    {/* Desktop loading */}
+                    <Skeleton className="h-5 w-24 mb-3" />
+                    <Skeleton className="h-8 w-16 mb-4" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))
           : // Data loaded or error - show zeros if no data
             [
               {
-                count: stats?.quotations?.total ?? 0,
-                label: tStats("quotations"),
+                title: tStats("quotations"),
+                total: stats?.quotations?.total ?? 0,
+                icon: FileText,
+                breakdown: [
+                  {
+                    label: tStats("draft"),
+                    count: stats?.quotations?.draft ?? 0,
+                  },
+                  {
+                    label: tStats("sent"),
+                    count: stats?.quotations?.sent ?? 0,
+                  },
+                ],
                 color: "text-blue-600 dark:text-blue-400",
+                bgColor: "bg-blue-50 dark:bg-blue-950",
               },
               {
-                count: stats?.challans?.total ?? 0,
-                label: tStats("challans"),
+                title: tStats("challans"),
+                total: stats?.challans?.total ?? 0,
+                icon: Package,
+                breakdown: [
+                  {
+                    label: tStats("draft"),
+                    count: stats?.challans?.draft ?? 0,
+                  },
+                  { label: tStats("sent"), count: stats?.challans?.sent ?? 0 },
+                ],
                 color: "text-purple-600 dark:text-purple-400",
+                bgColor: "bg-purple-50 dark:bg-purple-950",
               },
               {
-                count: stats?.invoices?.total ?? 0,
-                label: tStats("invoices"),
+                title: tStats("invoices"),
+                total: stats?.invoices?.total ?? 0,
+                icon: Receipt,
+                breakdown: [
+                  {
+                    label: tStats("draft"),
+                    count: stats?.invoices?.draft ?? 0,
+                  },
+                  { label: tStats("paid"), count: stats?.invoices?.paid ?? 0 },
+                  {
+                    label: tStats("unpaid"),
+                    count: stats?.invoices?.unpaid ?? 0,
+                  },
+                ],
                 color: "text-green-600 dark:text-green-400",
+                bgColor: "bg-green-50 dark:bg-green-950",
               },
             ].map((stat, index) => (
               <motion.div
@@ -105,14 +151,49 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="border-border/40 shadow-sm">
-                  <CardContent className="pt-5 pb-4 text-center">
-                    <div className={`text-2xl font-semibold ${stat.color}`}>
-                      {stat.count}
+                <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="pt-5 pb-4">
+                    {/* Mobile View: Simple total only */}
+                    <div className="md:hidden text-center">
+                      <div className={`text-2xl font-semibold ${stat.color}`}>
+                        {stat.total}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {stat.title}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {stat.label}
-                    </p>
+
+                    {/* Desktop View: Detailed breakdown with consistent height */}
+                    <div className="hidden md:block h-32">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                          {stat.title}
+                        </h3>
+                      </div>
+                      <div className={`text-3xl font-bold mb-4 ${stat.color}`}>
+                        {stat.total}
+                      </div>
+                      <div className="grid grid-rows-3 gap-1.5 min-h-[4.5rem]">
+                        {[0, 1, 2].map((idx) => {
+                          const item = stat.breakdown[idx];
+                          return (
+                            <div key={idx} className="min-h-[1.25rem]">
+                              {item && item.label ? (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    {item.label}
+                                  </span>
+                                  <span className="font-medium">
+                                    {item.count}
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>

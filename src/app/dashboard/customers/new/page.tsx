@@ -1,19 +1,19 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { CompanyForm } from '@/components/companies/CompanyForm'
+import { CustomerForm } from '@/components/customers/CustomerForm'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-export default function NewCompanyPage() {
-  const t = useTranslations('company')
+export default function NewCustomerPage() {
+  const t = useTranslations('customer')
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/companies">
+        <Link href="/dashboard">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -25,7 +25,7 @@ export default function NewCompanyPage() {
       </div>
 
       {/* Form */}
-      <CompanyForm mode="create" />
+      <CustomerForm mode="create" />
     </div>
   )
 }

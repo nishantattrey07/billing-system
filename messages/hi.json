@@ -53,6 +53,7 @@
     "accountNumber": "खाता संख्या",
     "ifscCode": "आईएफएससी कोड",
     "branch": "शाखा",
+    "switchedTo": "{companyName} पर स्विच किया",
     "form": {
       "create": "कंपनी बनाएं",
       "edit": "कंपनी एडिट करें",
