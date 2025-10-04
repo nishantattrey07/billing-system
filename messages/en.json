@@ -1,0 +1,107 @@
+{
+  "common": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "signOut": "Sign out",
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "view": "View",
+    "viewAll": "View All",
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to your billing system",
+    "selectedCompany": "Selected Company",
+    "selectCompany": "Select Company",
+    "lastUpdated": "Last updated",
+    "overview": "Overview",
+    "quickActions": "Quick Actions",
+    "setupManagement": "Setup & Management",
+    "recentActivity": "Recent Activity"
+  },
+  "stats": {
+    "quotations": "Quotations",
+    "invoices": "Invoices",
+    "challans": "Challans",
+    "total": "Total",
+    "pending": "Pending",
+    "unpaid": "Unpaid",
+    "paid": "Paid",
+    "sent": "Sent",
+    "draft": "Draft"
+  },
+  "company": {
+    "title": "Companies",
+    "register": "Register Company",
+    "addNew": "Add New Company",
+    "name": "Company Name",
+    "gstin": "GSTIN",
+    "pan": "PAN",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "pincode": "Pincode",
+    "phone": "Phone",
+    "email": "Email",
+    "bankName": "Bank Name",
+    "accountNumber": "Account Number",
+    "ifscCode": "IFSC Code",
+    "branch": "Branch"
+  },
+  "customer": {
+    "title": "Customers",
+    "register": "Register Customer",
+    "addNew": "Add New Customer",
+    "name": "Customer Name",
+    "gstin": "GSTIN",
+    "pan": "PAN",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "pincode": "Pincode",
+    "phone": "Phone",
+    "email": "Email",
+    "contactPerson": "Contact Person"
+  },
+  "quotation": {
+    "title": "Quotations",
+    "new": "New Quotation",
+    "number": "Quotation No.",
+    "date": "Date",
+    "validityDays": "Validity (Days)",
+    "amount": "Amount"
+  },
+  "invoice": {
+    "title": "Invoices",
+    "new": "New Invoice",
+    "number": "Invoice No.",
+    "date": "Date",
+    "dueDate": "Due Date",
+    "amount": "Amount"
+  },
+  "challan": {
+    "title": "Challans",
+    "new": "New Challan",
+    "number": "Challan No.",
+    "date": "Date",
+    "transportDetails": "Transport Details",
+    "vehicleNumber": "Vehicle Number"
+  },
+  "nav": {
+    "home": "Home",
+    "documents": "Documents",
+    "quotations": "Quotations",
+    "invoices": "Invoices",
+    "challans": "Challans",
+    "customers": "Customers",
+    "companies": "Companies",
+    "reports": "Reports",
+    "settings": "Settings"
+  }
+}

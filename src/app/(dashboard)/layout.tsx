@@ -1,39 +1,81 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function DashboardLayout({
+import { useEffect, useState } from 'react'
+import { redirect, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useIsMobile } from '@/lib/hooks/useMediaQuery'
+import { Header } from '@/components/layouts/Header'
+import { Sidebar } from '@/components/layouts/Sidebar'
+import { BottomNav } from '@/components/layouts/BottomNav'
+import { useStore } from '@/lib/store/useStore'
+import { cn } from '@/lib/utils'
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
+  const { sidebarCollapsed } = useStore()
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      setUser(user)
+      setLoading(false)
+    }
+
+    checkUser()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
 
   if (!user) {
-    redirect('/login')
+    return null
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Billing System</h1>
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-            <form action="/auth/signout" method="post">
-              <button
-                type="submit"
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Sign out
-              </button>
-            </form>
+    <div className="relative flex h-screen overflow-hidden">
+      {/* Desktop Sidebar */}
+      {!isMobile && <Sidebar />}
+
+      {/* Main Content */}
+      <div
+        className={cn(
+          'flex flex-1 flex-col overflow-hidden transition-all duration-300',
+          !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
+        )}
+      >
+        <Header user={user} showMenuButton={isMobile} />
+
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+          <div className="container mx-auto p-4 md:p-6 lg:p-8">
+            {children}
           </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">{children}</main>
+        </main>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && <BottomNav />}
     </div>
   )
 }

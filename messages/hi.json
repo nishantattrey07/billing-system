@@ -1,0 +1,107 @@
+{
+  "common": {
+    "home": "होम",
+    "dashboard": "डैशबोर्ड",
+    "signOut": "साइन आउट",
+    "search": "खोजें",
+    "save": "सेव",
+    "cancel": "कैंसल",
+    "delete": "डिलीट",
+    "edit": "एडिट",
+    "add": "जोड़ें",
+    "view": "देखें",
+    "viewAll": "सभी देखें",
+    "loading": "लोड हो रहा है...",
+    "noData": "कोई डेटा उपलब्ध नहीं"
+  },
+  "dashboard": {
+    "title": "डैशबोर्ड",
+    "welcome": "अपने बिलिंग सिस्टम में आपका स्वागत है",
+    "selectedCompany": "चुनी हुई कंपनी",
+    "selectCompany": "कंपनी चुनें",
+    "lastUpdated": "अंतिम अपडेट",
+    "overview": "अवलोकन",
+    "quickActions": "त्वरित कार्य",
+    "setupManagement": "सेटअप और प्रबंधन",
+    "recentActivity": "हाल की गतिविधि"
+  },
+  "stats": {
+    "quotations": "कोटेशन",
+    "invoices": "बिल",
+    "challans": "चालान",
+    "total": "कुल",
+    "pending": "पेंडिंग",
+    "unpaid": "अदा नहीं",
+    "paid": "भुगतान किया",
+    "sent": "भेज दिया",
+    "draft": "ड्राफ्ट"
+  },
+  "company": {
+    "title": "कंपनियां",
+    "register": "कंपनी पंजीकृत करें",
+    "addNew": "नई कंपनी जोड़ें",
+    "name": "कंपनी का नाम",
+    "gstin": "जीएसटीआईएन",
+    "pan": "पैन",
+    "address": "पता",
+    "city": "शहर",
+    "state": "राज्य",
+    "pincode": "पिनकोड",
+    "phone": "फोन",
+    "email": "ईमेल",
+    "bankName": "बैंक का नाम",
+    "accountNumber": "खाता संख्या",
+    "ifscCode": "आईएफएससी कोड",
+    "branch": "शाखा"
+  },
+  "customer": {
+    "title": "ग्राहक",
+    "register": "ग्राहक पंजीकृत करें",
+    "addNew": "नया ग्राहक जोड़ें",
+    "name": "ग्राहक का नाम",
+    "gstin": "जीएसटीआईएन",
+    "pan": "पैन",
+    "address": "पता",
+    "city": "शहर",
+    "state": "राज्य",
+    "pincode": "पिनकोड",
+    "phone": "फोन",
+    "email": "ईमेल",
+    "contactPerson": "संपर्क व्यक्ति"
+  },
+  "quotation": {
+    "title": "कोटेशन",
+    "new": "नया कोटेशन",
+    "number": "कोटेशन नंबर",
+    "date": "तारीख",
+    "validityDays": "वैधता (दिन)",
+    "amount": "राशि"
+  },
+  "invoice": {
+    "title": "बिल",
+    "new": "नया बिल",
+    "number": "बिल नंबर",
+    "date": "तारीख",
+    "dueDate": "नियत तारीख",
+    "amount": "राशि"
+  },
+  "challan": {
+    "title": "चालान",
+    "new": "नया चालान",
+    "number": "चालान नंबर",
+    "date": "तारीख",
+    "transportDetails": "परिवहन विवरण",
+    "vehicleNumber": "वाहन संख्या"
+  },
+  "nav": {
+    "home": "होम",
+    "documents": "दस्तावेज़",
+    "quotations": "कोटेशन",
+    "invoices": "बिल",
+    "challans": "चालान",
+    "customers": "ग्राहक",
+    "companies": "कंपनियां",
+    "reports": "रिपोर्ट",
+    "settings": "सेटिंग्स"
+  }
+}
