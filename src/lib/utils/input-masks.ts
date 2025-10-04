@@ -6,7 +6,8 @@
  * Format GSTIN: 22AAAAA0000A1Z5 → 22-AAAAA-0000-A1Z5
  */
 export function formatGSTIN(value: string): string {
-  const cleaned = value.replace(/[^A-Z0-9]/g, '').toUpperCase()
+  // Convert to uppercase first, then clean
+  const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 
   if (cleaned.length <= 2) return cleaned
   if (cleaned.length <= 7) return `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`
@@ -20,14 +21,14 @@ export function formatGSTIN(value: string): string {
  * Unmask GSTIN: 22-AAAAA-0000-A1Z5 → 22AAAAA0000A1Z5
  */
 export function unformatGSTIN(value: string): string {
-  return value.replace(/[^A-Z0-9]/g, '').toUpperCase()
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
 /**
  * Format PAN: ABCDE1234F (no masking, just uppercase)
  */
 export function formatPAN(value: string): string {
-  return value.replace(/[^A-Z0-9]/g, '').toUpperCase().slice(0, 10)
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10)
 }
 
 
@@ -42,7 +43,7 @@ export function formatPincode(value: string): string {
  * Format IFSC: SBIN0001234 (uppercase only)
  */
 export function formatIFSC(value: string): string {
-  return value.replace(/[^A-Z0-9]/g, '').toUpperCase().slice(0, 11)
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11)
 }
 
 /**

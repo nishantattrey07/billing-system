@@ -1,81 +1,122 @@
-import * as React from 'react'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
+  extractStateFromGSTIN,
   formatGSTIN,
-  unformatGSTIN,
+  formatIFSC,
   formatPAN,
   formatPincode,
-  formatIFSC,
-  extractStateFromGSTIN,
-} from '@/lib/utils/input-masks'
+  unformatGSTIN,
+} from "@/lib/utils/input-masks";
+import * as React from "react";
 
 export interface FormInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
-  label?: string
-  error?: string
-  mask?: 'gstin' | 'pan' | 'phone' | 'pincode' | 'ifsc'
-  onChange?: (value: string) => void
-  showStateHint?: boolean
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+  label?: string;
+  error?: string;
+  mask?: "gstin" | "pan" | "phone" | "pincode" | "ifsc";
+  onChange?: (value: string) => void;
+  showStateHint?: boolean;
 }
 
 export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
-  ({ className, label, error, mask, onChange, showStateHint, value, ...props }, ref) => {
-    const [displayValue, setDisplayValue] = React.useState('')
-    const [detectedState, setDetectedState] = React.useState('')
+  (
+    { className, label, error, mask, onChange, showStateHint, value, ...props },
+    ref
+  ) => {
+    const [displayValue, setDisplayValue] = React.useState("");
+    const [detectedState, setDetectedState] = React.useState("");
+    const inputRef = React.useRef<HTMLInputElement>(null);
+    const cursorPositionRef = React.useRef<number | null>(null);
 
     React.useEffect(() => {
       if (value !== undefined) {
-        setDisplayValue(formatValue(String(value), mask))
+        setDisplayValue(formatValue(String(value), mask));
       }
-    }, [value, mask])
+    }, [value, mask]);
 
-    const formatValue = (val: string, maskType?: FormInputProps['mask']): string => {
-      if (!maskType) return val
+    // Restore cursor position after value update
+    React.useEffect(() => {
+      if (inputRef.current && cursorPositionRef.current !== null) {
+        inputRef.current.setSelectionRange(
+          cursorPositionRef.current,
+          cursorPositionRef.current
+        );
+        cursorPositionRef.current = null;
+      }
+    }, [displayValue]);
+
+    const formatValue = (
+      val: string,
+      maskType?: FormInputProps["mask"]
+    ): string => {
+      if (!maskType) return val;
 
       switch (maskType) {
-        case 'gstin':
-          return formatGSTIN(val)
-        case 'pan':
-          return formatPAN(val)
-        case 'pincode':
-          return formatPincode(val)
-        case 'ifsc':
-          return formatIFSC(val)
+        case "gstin":
+          return formatGSTIN(val);
+        case "pan":
+          return formatPAN(val);
+        case "pincode":
+          return formatPincode(val);
+        case "ifsc":
+          return formatIFSC(val);
         default:
-          return val
+          return val;
       }
-    }
+    };
 
-    const unformatValue = (val: string, maskType?: FormInputProps['mask']): string => {
-      if (!maskType) return val
+    const unformatValue = (
+      val: string,
+      maskType?: FormInputProps["mask"]
+    ): string => {
+      if (!maskType) return val;
 
       switch (maskType) {
-        case 'gstin':
-          return unformatGSTIN(val)
+        case "gstin":
+          return unformatGSTIN(val);
         default:
-          return val
+          return val;
       }
-    }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const inputValue = e.target.value
-      const formatted = formatValue(inputValue, mask)
-      const unformatted = unformatValue(formatted, mask)
+      const inputValue = e.target.value;
+      const cursorPosition = e.target.selectionStart || 0;
+      const previousValue = displayValue;
 
-      setDisplayValue(formatted)
+      const formatted = formatValue(inputValue, mask);
+      const unformatted = unformatValue(formatted, mask);
 
-      // Detect state from GSTIN
-      if (mask === 'gstin' && showStateHint && unformatted.length >= 2) {
-        const state = extractStateFromGSTIN(unformatted)
-        setDetectedState(state)
-      } else {
-        setDetectedState('')
+      // Calculate new cursor position based on formatting changes
+      let newCursorPosition = cursorPosition;
+
+      // If characters were added (formatting), adjust cursor position
+      const addedChars = formatted.length - previousValue.length;
+      const inputChars = inputValue.length - previousValue.length;
+
+      if (addedChars > inputChars) {
+        // Formatting added characters (like dashes), move cursor past them
+        newCursorPosition = cursorPosition + (addedChars - inputChars);
+      } else if (addedChars < 0 && inputChars <= 0) {
+        // Backspace/delete - keep cursor at deletion point
+        newCursorPosition = cursorPosition;
       }
 
-      onChange?.(unformatted)
-    }
+      cursorPositionRef.current = newCursorPosition;
+      setDisplayValue(formatted);
+
+      // Detect state from GSTIN
+      if (mask === "gstin" && showStateHint && unformatted.length >= 2) {
+        const state = extractStateFromGSTIN(unformatted);
+        setDetectedState(state);
+      } else {
+        setDetectedState("");
+      }
+
+      onChange?.(unformatted);
+    };
 
     return (
       <div className="space-y-2.5">
@@ -84,7 +125,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             htmlFor={props.id}
             className={cn(
               "text-sm font-semibold text-foreground",
-              error && 'text-destructive'
+              error && "text-destructive"
             )}
           >
             {label}
@@ -92,21 +133,33 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
           </Label>
         )}
         <Input
-          ref={ref}
+          ref={(node) => {
+            inputRef.current = node;
+            if (typeof ref === "function") {
+              ref(node);
+            } else if (ref) {
+              ref.current = node;
+            }
+          }}
           value={displayValue}
           onChange={handleChange}
-          className={cn(error && 'border-destructive', className)}
+          className={cn(error && "border-destructive", className)}
           {...props}
         />
         {detectedState && (
           <p className="text-xs text-muted-foreground font-medium mt-1.5">
-            State detected: <span className="text-foreground font-semibold">{detectedState}</span>
+            State detected:{" "}
+            <span className="text-foreground font-semibold">
+              {detectedState}
+            </span>
           </p>
         )}
-        {error && <p className="text-xs text-destructive font-medium mt-1.5">{error}</p>}
+        {error && (
+          <p className="text-xs text-destructive font-medium mt-1.5">{error}</p>
+        )}
       </div>
-    )
+    );
   }
-)
+);
 
-FormInput.displayName = 'FormInput'
+FormInput.displayName = "FormInput";
