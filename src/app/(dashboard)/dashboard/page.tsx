@@ -2,9 +2,10 @@
 
 import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+
 import { FileText, Receipt, Package, Building2, Users, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard')
@@ -126,6 +127,7 @@ export default function DashboardPage() {
             {
               icon: Building2,
               title: tCompany('register'),
+              href: '/companies/new',
               bgColor: 'bg-orange-50 dark:bg-orange-950',
               textColor: 'text-orange-600 dark:text-orange-400',
               hoverColor: 'hover:bg-orange-100 dark:hover:bg-orange-900',
@@ -133,6 +135,7 @@ export default function DashboardPage() {
             {
               icon: Users,
               title: tCustomer('register'),
+              href: '/customers/new',
               bgColor: 'bg-teal-50 dark:bg-teal-950',
               textColor: 'text-teal-600 dark:text-teal-400',
               hoverColor: 'hover:bg-teal-100 dark:hover:bg-teal-900',
@@ -146,19 +149,21 @@ export default function DashboardPage() {
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer group">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${action.bgColor} ${action.hoverColor} transition-colors`}>
-                        <action.icon className={`h-4 w-4 ${action.textColor}`} strokeWidth={2} />
+              <Link href={action.href}>
+                <Card className="border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer group">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${action.bgColor} ${action.hoverColor} transition-colors`}>
+                          <action.icon className={`h-4 w-4 ${action.textColor}`} strokeWidth={2} />
+                        </div>
+                        <h3 className="font-medium text-sm">{action.title}</h3>
                       </div>
-                      <h3 className="font-medium text-sm">{action.title}</h3>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             </motion.div>
           ))}
         </div>

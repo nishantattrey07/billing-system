@@ -52,7 +52,14 @@
     "bankName": "बैंक का नाम",
     "accountNumber": "खाता संख्या",
     "ifscCode": "आईएफएससी कोड",
-    "branch": "शाखा"
+    "branch": "शाखा",
+    "form": {
+      "create": "कंपनी बनाएं",
+      "edit": "कंपनी एडिट करें",
+      "basicInfo": "बुनियादी जानकारी",
+      "contactInfo": "संपर्क जानकारी",
+      "bankInfo": "बैंक जानकारी"
+    }
   },
   "customer": {
     "title": "ग्राहक",
@@ -67,7 +74,13 @@
     "pincode": "पिनकोड",
     "phone": "फोन",
     "email": "ईमेल",
-    "contactPerson": "संपर्क व्यक्ति"
+    "contactPerson": "संपर्क व्यक्ति",
+    "form": {
+      "create": "ग्राहक बनाएं",
+      "edit": "ग्राहक एडिट करें",
+      "basicInfo": "बुनियादी जानकारी",
+      "contactInfo": "संपर्क जानकारी"
+    }
   },
   "quotation": {
     "title": "कोटेशन",
@@ -103,5 +116,30 @@
     "companies": "कंपनियां",
     "reports": "रिपोर्ट",
     "settings": "सेटिंग्स"
+  },
+  "validation": {
+    "required": "यह फील्ड आवश्यक है",
+    "invalid": "अमान्य फॉर्मेट",
+    "tooShort": "बहुत छोटा",
+    "tooLong": "बहुत बड़ा",
+    "invalidEmail": "अमान्य ईमेल",
+    "invalidGSTIN": "अमान्य जीएसटीआईएन (जैसे, 22AAAAA0000A1Z5)",
+    "invalidPAN": "अमान्य पैन (जैसे, ABCDE1234F)",
+    "invalidPhone": "फोन नंबर 10 अंकों का होना चाहिए (6-9 से शुरू)",
+    "invalidPincode": "पिनकोड 6 अंकों का होना चाहिए",
+    "invalidIFSC": "अमान्य आईएफएससी कोड (जैसे, SBIN0001234)",
+    "duplicateGSTIN": "यह जीएसटीआईएन पहले से मौजूद है",
+    "duplicateError": "यह वैल्यू पहले से मौजूद है",
+    "serverError": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",
+    "notFound": "रिकॉर्ड नहीं मिला"
+  },
+  "messages": {
+    "createSuccess": "सफलतापूर्वक बनाया गया",
+    "updateSuccess": "सफलतापूर्वक अपडेट किया गया",
+    "deleteSuccess": "सफलतापूर्वक डिलीट किया गया",
+    "createError": "बनाने में विफल",
+    "updateError": "अपडेट करने में विफल",
+    "deleteError": "डिलीट करने में विफल",
+    "loadError": "डेटा लोड करने में विफल"
   }
 }

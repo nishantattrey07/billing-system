@@ -15,10 +15,12 @@ datasource db {
     directUrl = env("DIRECT_URL")
   }
 
-  model Company {
+
+
+ model Company {
     id            String   @id @default(uuid()) @db.Uuid
     name          String
-    gstin         String
+    gstin         String   @unique  // ← Add unique constraint
     pan           String?
     address       String?
     city          String?
@@ -33,24 +35,25 @@ datasource db {
     createdAt     DateTime @default(now()) @map("created_at")
     updatedAt     DateTime @updatedAt @map("updated_at")
 
+    @@index([name, gstin, city])  // ← Add for search performance
     @@map("companies")
   }
 
   model Customer {
     id            String   @id @default(uuid()) @db.Uuid
     name          String
-    gstin         String?
+    gstin         String?  @unique  // ← Unique but nullable (for B2C)
     pan           String?
     address       String?
     city          String?
     state         String?
     pincode       String?
+    phone         String?  // ← Add phone field
     email         String?
+    contactPerson String?  @map("contact_person")  // ← Add contact person
     createdAt     DateTime @default(now()) @map("created_at")
     updatedAt     DateTime @updatedAt @map("updated_at")
 
-  
-
+    @@index([name, city, contactPerson])  // ← Add for search
     @@map("customers")
   }
-

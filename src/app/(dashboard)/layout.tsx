@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { redirect, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useIsMobile } from '@/lib/hooks/useMediaQuery'
 import { Header } from '@/components/layouts/Header'
 import { Sidebar } from '@/components/layouts/Sidebar'
 import { BottomNav } from '@/components/layouts/BottomNav'
+import { OfflineIndicator } from '@/components/ui/offline-indicator'
+import { PageTransition } from '@/components/ui/page-transition'
 import { useStore } from '@/lib/store/useStore'
 import { cn } from '@/lib/utils'
 
@@ -55,6 +57,9 @@ export default function DashboardLayout({
 
   return (
     <div className="relative flex h-screen overflow-hidden">
+      {/* Offline Indicator */}
+      <OfflineIndicator />
+
       {/* Desktop Sidebar */}
       {!isMobile && <Sidebar />}
 
@@ -69,7 +74,7 @@ export default function DashboardLayout({
 
         <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-6 lg:p-8">
-            {children}
+            <PageTransition>{children}</PageTransition>
           </div>
         </main>
       </div>

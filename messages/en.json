@@ -52,7 +52,14 @@
     "bankName": "Bank Name",
     "accountNumber": "Account Number",
     "ifscCode": "IFSC Code",
-    "branch": "Branch"
+    "branch": "Branch",
+    "form": {
+      "create": "Create Company",
+      "edit": "Edit Company",
+      "basicInfo": "Basic Information",
+      "contactInfo": "Contact Information",
+      "bankInfo": "Bank Information"
+    }
   },
   "customer": {
     "title": "Customers",
@@ -67,7 +74,13 @@
     "pincode": "Pincode",
     "phone": "Phone",
     "email": "Email",
-    "contactPerson": "Contact Person"
+    "contactPerson": "Contact Person",
+    "form": {
+      "create": "Create Customer",
+      "edit": "Edit Customer",
+      "basicInfo": "Basic Information",
+      "contactInfo": "Contact Information"
+    }
   },
   "quotation": {
     "title": "Quotations",
@@ -103,5 +116,30 @@
     "companies": "Companies",
     "reports": "Reports",
     "settings": "Settings"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalid": "Invalid format",
+    "tooShort": "Too short",
+    "tooLong": "Too long",
+    "invalidEmail": "Invalid email address",
+    "invalidGSTIN": "Invalid GSTIN format (e.g., 22AAAAA0000A1Z5)",
+    "invalidPAN": "Invalid PAN format (e.g., ABCDE1234F)",
+    "invalidPhone": "Phone must be 10 digits starting with 6-9",
+    "invalidPincode": "Pincode must be 6 digits",
+    "invalidIFSC": "Invalid IFSC code (e.g., SBIN0001234)",
+    "duplicateGSTIN": "Company with this GSTIN already exists",
+    "duplicateError": "This value already exists",
+    "serverError": "Something went wrong. Please try again.",
+    "notFound": "Record not found"
+  },
+  "messages": {
+    "createSuccess": "Created successfully",
+    "updateSuccess": "Updated successfully",
+    "deleteSuccess": "Deleted successfully",
+    "createError": "Failed to create",
+    "updateError": "Failed to update",
+    "deleteError": "Failed to delete",
+    "loadError": "Failed to load data"
   }
 }
