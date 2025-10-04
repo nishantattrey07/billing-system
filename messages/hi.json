@@ -74,7 +74,13 @@
     "pincode": "पिनकोड",
     "phone": "फोन",
     "email": "ईमेल",
-    "contactPerson": "संपर्क व्यक्ति"
+    "contactPerson": "संपर्क व्यक्ति",
+    "form": {
+      "create": "ग्राहक बनाएं",
+      "edit": "ग्राहक एडिट करें",
+      "basicInfo": "बुनियादी जानकारी",
+      "contactInfo": "संपर्क जानकारी"
+    }
   },
   "quotation": {
     "title": "कोटेशन",

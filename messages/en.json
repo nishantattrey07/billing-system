@@ -74,7 +74,13 @@
     "pincode": "Pincode",
     "phone": "Phone",
     "email": "Email",
-    "contactPerson": "Contact Person"
+    "contactPerson": "Contact Person",
+    "form": {
+      "create": "Create Customer",
+      "edit": "Edit Customer",
+      "basicInfo": "Basic Information",
+      "contactInfo": "Contact Information"
+    }
   },
   "quotation": {
     "title": "Quotations",

@@ -8,8 +8,8 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
-import { companySchema, type CompanyInput } from '@/lib/validation/schemas/company.schema'
-import { useCreateCompany, useUpdateCompany } from '@/lib/hooks/useCompanies'
+import { customerSchema, type CustomerInput } from '@/lib/validation/schemas/customer.schema'
+import { useCreateCustomer, useUpdateCustomer } from '@/lib/hooks/useCustomers'
 import { useAutoSave } from '@/lib/hooks/useAutoSave'
 import { useSmartDefaults, useAutoSaveDefaults } from '@/lib/hooks/useSmartDefaults'
 import { Button } from '@/components/ui/button'
@@ -18,16 +18,16 @@ import { FormInput } from '@/components/ui/form-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DraftRestoreDialog } from '@/components/ui/draft-restore-dialog'
-import { Company } from '@/generated/prisma'
+import { Customer } from '@/generated/prisma'
 
-interface CompanyFormProps {
-  company?: Company
+interface CustomerFormProps {
+  customer?: Customer
   mode?: 'create' | 'edit'
 }
 
-// Transform Company (with null) to CompanyInput (with undefined/empty string)
-function transformCompanyToFormData(company?: Company, smartDefaults?: { city?: string; state?: string; pincode?: string }): Partial<CompanyInput> {
-  if (!company) {
+// Transform Customer (with null) to CustomerInput (with undefined/empty string)
+function transformCustomerToFormData(customer?: Customer, smartDefaults?: { city?: string; state?: string; pincode?: string }): Partial<CustomerInput> {
+  if (!customer) {
     return {
       name: '',
       gstin: '',
@@ -38,45 +38,39 @@ function transformCompanyToFormData(company?: Company, smartDefaults?: { city?: 
       pincode: smartDefaults?.pincode ?? '',
       phone: '',
       email: '',
-      bankName: '',
-      accountNumber: '',
-      ifscCode: '',
-      branch: '',
+      contactPerson: '',
     }
   }
 
   return {
-    name: company.name,
-    gstin: company.gstin,
-    pan: company.pan ?? '',
-    address: company.address ?? '',
-    city: company.city ?? '',
-    state: company.state ?? '',
-    pincode: company.pincode ?? '',
-    phone: company.phone ?? '',
-    email: company.email ?? '',
-    bankName: company.bankName ?? '',
-    accountNumber: company.accountNumber ?? '',
-    ifscCode: company.ifscCode ?? '',
-    branch: company.branch ?? '',
+    name: customer.name,
+    gstin: customer.gstin ?? '',
+    pan: customer.pan ?? '',
+    address: customer.address ?? '',
+    city: customer.city ?? '',
+    state: customer.state ?? '',
+    pincode: customer.pincode ?? '',
+    phone: customer.phone ?? '',
+    email: customer.email ?? '',
+    contactPerson: customer.contactPerson ?? '',
   }
 }
 
-export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
+export function CustomerForm({ customer, mode = 'create' }: CustomerFormProps) {
   const router = useRouter()
-  const t = useTranslations('company')
+  const t = useTranslations('customer')
   const tCommon = useTranslations('common')
   const tMessages = useTranslations('messages')
   const tValidation = useTranslations('validation')
 
-  const createCompany = useCreateCompany()
-  const updateCompany = useUpdateCompany()
+  const createCustomer = useCreateCustomer()
+  const updateCustomer = useUpdateCustomer()
   const { getDefaults } = useSmartDefaults()
 
   const [showDraftDialog, setShowDraftDialog] = useState(false)
 
-  // Get smart defaults for new companies
-  const smartDefaults = mode === 'create' && !company ? getDefaults() : undefined
+  // Get smart defaults for new customers
+  const smartDefaults = mode === 'create' && !customer ? getDefaults() : undefined
 
   const {
     register,
@@ -85,15 +79,15 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
     setValue,
     watch,
     reset,
-  } = useForm<CompanyInput>({
-    resolver: zodResolver(companySchema),
-    defaultValues: transformCompanyToFormData(company, smartDefaults),
+  } = useForm<CustomerInput>({
+    resolver: zodResolver(customerSchema),
+    defaultValues: transformCustomerToFormData(customer, smartDefaults),
   })
 
-  const isLoading = createCompany.isPending || updateCompany.isPending
+  const isLoading = createCustomer.isPending || updateCustomer.isPending
 
   // Auto-save draft (only for create mode)
-  const draftKey = `company-draft-${mode === 'edit' ? company?.id : 'new'}`
+  const draftKey = `customer-draft-${mode === 'edit' ? customer?.id : 'new'}`
   const formData = watch()
   const { clearDraft, getDraft } = useAutoSave({
     key: draftKey,
@@ -109,8 +103,8 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
 
   // Check for draft on mount (only for create mode)
   useEffect(() => {
-    if (mode === 'create' && !company) {
-      const draft = getDraft<CompanyInput>()
+    if (mode === 'create' && !customer) {
+      const draft = getDraft<CustomerInput>()
       if (draft) {
         setShowDraftDialog(true)
       }
@@ -119,7 +113,7 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
   }, [])
 
   const handleRestoreDraft = () => {
-    const draft = getDraft<CompanyInput>()
+    const draft = getDraft<CustomerInput>()
     if (draft) {
       reset(draft)
     }
@@ -169,17 +163,17 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isDirty, router])
 
-  const onSubmit = async (data: CompanyInput) => {
+  const onSubmit = async (data: CustomerInput) => {
     try {
       if (mode === 'create') {
-        await createCompany.mutateAsync(data)
+        await createCustomer.mutateAsync(data)
         clearDraft() // Clear draft on successful creation
         toast.success(tMessages('createSuccess'))
-        router.push('/companies')
-      } else if (company) {
-        await updateCompany.mutateAsync({ id: company.id, data })
+        router.push('/customers')
+      } else if (customer) {
+        await updateCustomer.mutateAsync({ id: customer.id, data })
         toast.success(tMessages('updateSuccess'))
-        router.push('/companies')
+        router.push('/customers')
       }
     } catch (error) {
       // Handle validation errors
@@ -191,7 +185,7 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
             toast.error(`${field.path}: ${tValidation(field.code)}`)
           })
         } else if (apiError.error === 'duplicate_error') {
-          toast.error(tValidation('duplicateGSTIN'))
+          toast.error(tValidation('duplicateError'))
         } else {
           toast.error(tMessages('createError'))
         }
@@ -228,7 +222,6 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
               id="gstin"
               label={t('gstin')}
               mask="gstin"
-              required
               showStateHint
               value={watch('gstin')}
               onChange={(value) => setValue('gstin', value, { shouldValidate: true })}
@@ -256,6 +249,14 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label htmlFor="contactPerson">{t('contactPerson')}</Label>
+              <Input id="contactPerson" {...register('contactPerson')} />
+              {errors.contactPerson && (
+                <p className="text-xs text-destructive mt-1">{errors.contactPerson.message}</p>
+              )}
+            </div>
+
             <div className="sm:col-span-2">
               <Label htmlFor="address">{t('address')}</Label>
               <Input id="address" {...register('address')} />
@@ -290,65 +291,19 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
               placeholder="123456"
             />
 
-            <FormInput
-              id="phone"
-              label={t('phone')}
-              mask="phone"
-              value={watch('phone')}
-              onChange={(value) => setValue('phone', value, { shouldValidate: true })}
-              error={errors.phone?.message}
-              placeholder="98765-43210"
-            />
+            <div>
+              <Label htmlFor="phone">{t('phone')}</Label>
+              <Input id="phone" {...register('phone')} placeholder="9876543210" />
+              {errors.phone && (
+                <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>
+              )}
+            </div>
 
             <div className="sm:col-span-2">
               <Label htmlFor="email">{t('email')}</Label>
               <Input id="email" type="email" {...register('email')} />
               {errors.email && (
                 <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bank Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('form.bankInfo') || 'Bank Information'}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="bankName">{t('bankName')}</Label>
-              <Input id="bankName" {...register('bankName')} />
-              {errors.bankName && (
-                <p className="text-xs text-destructive mt-1">{errors.bankName.message}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="accountNumber">{t('accountNumber')}</Label>
-              <Input id="accountNumber" {...register('accountNumber')} />
-              {errors.accountNumber && (
-                <p className="text-xs text-destructive mt-1">{errors.accountNumber.message}</p>
-              )}
-            </div>
-
-            <FormInput
-              id="ifscCode"
-              label={t('ifscCode')}
-              mask="ifsc"
-              value={watch('ifscCode')}
-              onChange={(value) => setValue('ifscCode', value, { shouldValidate: true })}
-              error={errors.ifscCode?.message}
-              placeholder="SBIN0001234"
-            />
-
-            <div>
-              <Label htmlFor="branch">{t('branch')}</Label>
-              <Input id="branch" {...register('branch')} />
-              {errors.branch && (
-                <p className="text-xs text-destructive mt-1">{errors.branch.message}</p>
               )}
             </div>
           </div>
@@ -388,7 +343,7 @@ export function CompanyForm({ company, mode = 'create' }: CompanyFormProps) {
         open={showDraftDialog}
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
-        entityType="company"
+        entityType="customer"
       />
     </form>
   )
