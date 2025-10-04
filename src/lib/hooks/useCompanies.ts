@@ -1,6 +1,6 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Company } from '@/generated/prisma'
 import { CompanyInput } from '@/lib/validation/schemas/company.schema'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface CompaniesResponse {
   data: Company[]
@@ -25,6 +25,25 @@ export function useCompanies(search?: string) {
     },
     initialPageParam: null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+
+export function useAllCompanies() {
+  return useQuery<Company[]>({
+    queryKey: ['companies', 'all'],
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      params.set('limit', '100') // Get up to 100 companies for dropdown
+
+      const res = await fetch(`/api/companies?${params}`)
+      if (!res.ok) throw new Error('Failed to fetch companies')
+
+      const result = await res.json()
+      // Extract just the data array from paginated response
+      return result.data?.data || []
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
@@ -94,7 +113,7 @@ export function useUpdateCompany() {
       return result.data
     },
     onSuccess: (_, variables) => {
-      
+
       queryClient.invalidateQueries({ queryKey: ['company', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['companies'] })
     },
