@@ -10,50 +10,188 @@ generator client {
 }
 
 datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
-  }
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
+model Company {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  gstin         String   @unique // ← Add unique constraint
+  pan           String?
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  phone         String?
+  email         String?
+  bankName      String?  @map("bank_name")
+  accountNumber String?  @map("account_number")
+  ifscCode      String?  @map("ifsc_code")
+  branch        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
+  quotations Quotation[]
+  invoices   Invoice[]
+  challans   Challan[]
 
- model Company {
-    id            String   @id @default(uuid()) @db.Uuid
-    name          String
-    gstin         String   @unique  // ← Add unique constraint
-    pan           String?
-    address       String?
-    city          String?
-    state         String?
-    pincode       String?
-    phone         String?
-    email         String?
-    bankName      String?  @map("bank_name")
-    accountNumber String?  @map("account_number")
-    ifscCode      String?  @map("ifsc_code")
-    branch        String?
-    createdAt     DateTime @default(now()) @map("created_at")
-    updatedAt     DateTime @updatedAt @map("updated_at")
+  @@index([name, gstin, city]) // ← Add for search performance
+  @@map("companies")
+}
 
-    @@index([name, gstin, city])  // ← Add for search performance
-    @@map("companies")
-  }
+model Customer {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  gstin         String?  @unique // ← Unique but nullable (for B2C)
+  pan           String?
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  phone         String? // ← Add phone field
+  email         String?
+  contactPerson String?  @map("contact_person") // ← Add contact person
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  model Customer {
-    id            String   @id @default(uuid()) @db.Uuid
-    name          String
-    gstin         String?  @unique  // ← Unique but nullable (for B2C)
-    pan           String?
-    address       String?
-    city          String?
-    state         String?
-    pincode       String?
-    phone         String?  // ← Add phone field
-    email         String?
-    contactPerson String?  @map("contact_person")  // ← Add contact person
-    createdAt     DateTime @default(now()) @map("created_at")
-    updatedAt     DateTime @updatedAt @map("updated_at")
+  quotations Quotation[]
+  invoices   Invoice[]
+  challans   Challan[]
 
-    @@index([name, city, contactPerson])  // ← Add for search
-    @@map("customers")
-  }
+  @@index([name, city, contactPerson]) // ← Add for search
+  @@map("customers")
+}
+
+model Quotation {
+  id         String    @id @default(uuid()) @db.Uuid
+  number     String // Auto-generated: QT-2024-25-0001
+  companyId  String    @db.Uuid
+  customerId String?   @db.Uuid
+  company    Company   @relation(fields: [companyId], references: [id])
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  // Customer details (can be manual or from customer)
+  customerName    String
+  customerGstin   String?
+  customerAddress String?
+
+  // Financial year for numbering
+  financialYear String // "2024-25"
+
+  // Items as JSON
+  items Json // [{name, qty, rate, amount}]
+
+  // Amounts
+  subtotal Decimal @db.Decimal(12, 2)
+  cgst     Decimal @db.Decimal(12, 2)
+  sgst     Decimal @db.Decimal(12, 2)
+  igst     Decimal @db.Decimal(12, 2)
+  total    Decimal @db.Decimal(12, 2)
+
+  // Status
+  status String @default("draft") // draft, sent, accepted, rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, financialYear, number])
+  @@index([companyId, status, createdAt])
+  @@map("quotations")
+}
+
+model Invoice {
+  id         String    @id @default(uuid()) @db.Uuid
+  number     String // Auto-generated: INV-2024-25-0001
+  companyId  String    @db.Uuid
+  customerId String?   @db.Uuid
+  company    Company   @relation(fields: [companyId], references: [id])
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  // Customer details (can be manual or from customer)
+  customerName    String
+  customerGstin   String?
+  customerAddress String?
+
+  // Financial year for numbering
+  financialYear String // "2024-25"
+
+  // Invoice specific fields
+  dueDate      DateTime?
+  paymentTerms String? // "Net 30 days", "Immediate", etc.
+
+  // Items as JSON
+  items Json // [{name, hsn, qty, rate, discount, taxRate, amount}]
+
+  // Amounts
+  subtotal          Decimal @db.Decimal(12, 2)
+  discount          Decimal @default(0) @db.Decimal(12, 2)
+  cgst              Decimal @db.Decimal(12, 2)
+  sgst              Decimal @db.Decimal(12, 2)
+  igst              Decimal @db.Decimal(12, 2)
+  additionalCharges Decimal @default(0) @db.Decimal(12, 2) // shipping, handling
+  roundOff          Decimal @default(0) @db.Decimal(12, 2)
+  total             Decimal @db.Decimal(12, 2)
+
+  // Status
+  status     String  @default("draft") // draft, sent, paid, unpaid, partial
+  paidAmount Decimal @default(0) @db.Decimal(12, 2)
+
+  // Relations
+  challans Challan[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, financialYear, number])
+  @@index([companyId, status, createdAt])
+  @@index([dueDate, status])
+  @@map("invoices")
+}
+
+model Challan {
+  id         String    @id @default(uuid()) @db.Uuid
+  number     String // Auto-generated: CH-2024-25-0001
+  companyId  String    @db.Uuid
+  customerId String?   @db.Uuid
+  invoiceId  String?   @db.Uuid // Link to invoice (optional)
+  company    Company   @relation(fields: [companyId], references: [id])
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+
+  // Customer details (can be manual or from customer)
+  customerName    String
+  customerGstin   String?
+  customerAddress String?
+
+  // Financial year for numbering
+  financialYear String // "2024-25"
+
+  // Transport details
+  transportDetails String?
+  vehicleNumber    String?
+  driverName       String?
+  driverPhone      String?
+
+  // Items as JSON (copied from invoice or manual)
+  items Json // [{name, hsn, qty, rate, amount}]
+
+  // Amounts
+  subtotal Decimal @db.Decimal(12, 2)
+  cgst     Decimal @db.Decimal(12, 2)
+  sgst     Decimal @db.Decimal(12, 2)
+  igst     Decimal @db.Decimal(12, 2)
+  total    Decimal @db.Decimal(12, 2)
+
+  // Status
+  status String @default("draft") // draft, sent, delivered
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, financialYear, number])
+  @@index([companyId, status, createdAt])
+  @@index([invoiceId])
+  @@map("challans")
+}
