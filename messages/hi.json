@@ -52,7 +52,14 @@
     "bankName": "बैंक का नाम",
     "accountNumber": "खाता संख्या",
     "ifscCode": "आईएफएससी कोड",
-    "branch": "शाखा"
+    "branch": "शाखा",
+    "form": {
+      "create": "कंपनी बनाएं",
+      "edit": "कंपनी एडिट करें",
+      "basicInfo": "बुनियादी जानकारी",
+      "contactInfo": "संपर्क जानकारी",
+      "bankInfo": "बैंक जानकारी"
+    }
   },
   "customer": {
     "title": "ग्राहक",

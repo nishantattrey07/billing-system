@@ -52,7 +52,14 @@
     "bankName": "Bank Name",
     "accountNumber": "Account Number",
     "ifscCode": "IFSC Code",
-    "branch": "Branch"
+    "branch": "Branch",
+    "form": {
+      "create": "Create Company",
+      "edit": "Edit Company",
+      "basicInfo": "Basic Information",
+      "contactInfo": "Contact Information",
+      "bankInfo": "Bank Information"
+    }
   },
   "customer": {
     "title": "Customers",
