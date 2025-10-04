@@ -108,7 +108,6 @@ export default function DashboardPage() {
                     label: tStats("sent"),
                     count: stats?.quotations?.sent ?? 0,
                   },
-                  { label: "", count: 0 }, // Empty slot for alignment
                 ],
                 color: "text-blue-600 dark:text-blue-400",
                 bgColor: "bg-blue-50 dark:bg-blue-950",
@@ -123,7 +122,6 @@ export default function DashboardPage() {
                     count: stats?.challans?.draft ?? 0,
                   },
                   { label: tStats("sent"), count: stats?.challans?.sent ?? 0 },
-                  { label: "", count: 0 }, // Empty slot for alignment
                 ],
                 color: "text-purple-600 dark:text-purple-400",
                 bgColor: "bg-purple-50 dark:bg-purple-950",
@@ -176,23 +174,24 @@ export default function DashboardPage() {
                       <div className={`text-3xl font-bold mb-4 ${stat.color}`}>
                         {stat.total}
                       </div>
-                      <div className="space-y-1.5">
-                        {stat.breakdown.map((item, idx) => (
-                          <div key={idx}>
-                            {item.label ? (
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                  {item.label}
-                                </span>
-                                <span className="font-medium">
-                                  {item.count}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="h-5" /> // Empty space for alignment
-                            )}
-                          </div>
-                        ))}
+                      <div className="grid grid-rows-3 gap-1.5 min-h-[4.5rem]">
+                        {[0, 1, 2].map((idx) => {
+                          const item = stat.breakdown[idx];
+                          return (
+                            <div key={idx} className="min-h-[1.25rem]">
+                              {item && item.label ? (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    {item.label}
+                                  </span>
+                                  <span className="font-medium">
+                                    {item.count}
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </CardContent>
