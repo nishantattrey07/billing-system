@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const company = await prisma.company.create({
       data: {
         ...data,
-        userId: user!.id,
+        userId: (user as { id: string }).id,
       },
     })
 
