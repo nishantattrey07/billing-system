@@ -100,8 +100,14 @@ export default function DashboardPage() {
                 total: stats?.quotations?.total ?? 0,
                 icon: FileText,
                 breakdown: [
-                  { label: tStats("draft"), count: stats?.quotations?.draft ?? 0 },
-                  { label: tStats("sent"), count: stats?.quotations?.sent ?? 0 },
+                  {
+                    label: tStats("draft"),
+                    count: stats?.quotations?.draft ?? 0,
+                  },
+                  {
+                    label: tStats("sent"),
+                    count: stats?.quotations?.sent ?? 0,
+                  },
                   { label: "", count: 0 }, // Empty slot for alignment
                 ],
                 color: "text-blue-600 dark:text-blue-400",
@@ -112,7 +118,10 @@ export default function DashboardPage() {
                 total: stats?.challans?.total ?? 0,
                 icon: Package,
                 breakdown: [
-                  { label: tStats("draft"), count: stats?.challans?.draft ?? 0 },
+                  {
+                    label: tStats("draft"),
+                    count: stats?.challans?.draft ?? 0,
+                  },
                   { label: tStats("sent"), count: stats?.challans?.sent ?? 0 },
                   { label: "", count: 0 }, // Empty slot for alignment
                 ],
@@ -124,9 +133,15 @@ export default function DashboardPage() {
                 total: stats?.invoices?.total ?? 0,
                 icon: Receipt,
                 breakdown: [
-                  { label: tStats("draft"), count: stats?.invoices?.draft ?? 0 },
+                  {
+                    label: tStats("draft"),
+                    count: stats?.invoices?.draft ?? 0,
+                  },
                   { label: tStats("paid"), count: stats?.invoices?.paid ?? 0 },
-                  { label: tStats("unpaid"), count: stats?.invoices?.unpaid ?? 0 },
+                  {
+                    label: tStats("unpaid"),
+                    count: stats?.invoices?.unpaid ?? 0,
+                  },
                 ],
                 color: "text-green-600 dark:text-green-400",
                 bgColor: "bg-green-50 dark:bg-green-950",
@@ -169,7 +184,9 @@ export default function DashboardPage() {
                                 <span className="text-muted-foreground">
                                   {item.label}
                                 </span>
-                                <span className="font-medium">{item.count}</span>
+                                <span className="font-medium">
+                                  {item.count}
+                                </span>
                               </div>
                             ) : (
                               <div className="h-5" /> // Empty space for alignment
