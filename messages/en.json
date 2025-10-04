@@ -22,6 +22,7 @@
     "lastUpdated": "Last updated",
     "overview": "Overview",
     "quickActions": "Quick Actions",
+    "setupManagement": "Setup & Management",
     "recentActivity": "Recent Activity"
   },
   "stats": {
@@ -95,7 +96,11 @@
   "nav": {
     "home": "Home",
     "documents": "Documents",
+    "quotations": "Quotations",
+    "invoices": "Invoices",
+    "challans": "Challans",
     "customers": "Customers",
+    "companies": "Companies",
     "reports": "Reports",
     "settings": "Settings"
   }

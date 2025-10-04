@@ -4,10 +4,10 @@
     "dashboard": "डैशबोर्ड",
     "signOut": "साइन आउट",
     "search": "खोजें",
-    "save": "सहेजें",
-    "cancel": "रद्द करें",
-    "delete": "हटाएं",
-    "edit": "संपादित करें",
+    "save": "सेव",
+    "cancel": "कैंसल",
+    "delete": "डिलीट",
+    "edit": "एडिट",
     "add": "जोड़ें",
     "view": "देखें",
     "viewAll": "सभी देखें",
@@ -17,11 +17,12 @@
   "dashboard": {
     "title": "डैशबोर्ड",
     "welcome": "अपने बिलिंग सिस्टम में आपका स्वागत है",
-    "selectedCompany": "चयनित कंपनी",
+    "selectedCompany": "चुनी हुई कंपनी",
     "selectCompany": "कंपनी चुनें",
     "lastUpdated": "अंतिम अपडेट",
     "overview": "अवलोकन",
     "quickActions": "त्वरित कार्य",
+    "setupManagement": "सेटअप और प्रबंधन",
     "recentActivity": "हाल की गतिविधि"
   },
   "stats": {
@@ -29,7 +30,7 @@
     "invoices": "बिल",
     "challans": "चालान",
     "total": "कुल",
-    "pending": "लंबित",
+    "pending": "पेंडिंग",
     "unpaid": "अदा नहीं",
     "paid": "भुगतान किया",
     "sent": "भेज दिया",
@@ -95,7 +96,11 @@
   "nav": {
     "home": "होम",
     "documents": "दस्तावेज़",
+    "quotations": "कोटेशन",
+    "invoices": "बिल",
+    "challans": "चालान",
     "customers": "ग्राहक",
+    "companies": "कंपनियां",
     "reports": "रिपोर्ट",
     "settings": "सेटिंग्स"
   }
