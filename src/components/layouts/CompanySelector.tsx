@@ -11,16 +11,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Company } from "@/generated/prisma";
 import { useAllCompanies } from "@/lib/hooks/useCompanies";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 import { Building2, Check, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { Company } from "@/generated/prisma";
 
 interface CompanySelectorProps {
   compact?: boolean; // For mobile view
@@ -29,6 +29,7 @@ interface CompanySelectorProps {
 export function CompanySelector({ compact = false }: CompanySelectorProps) {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
+  const tCompany = useTranslations("company");
   const { data: companies, isLoading, isError } = useAllCompanies();
   const { selectedCompanyId, selectedCompany, setSelectedCompany } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,7 +69,8 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companies]);
 
-  const currentCompany = selectedCompany || companies?.find((c) => c.id === selectedCompanyId);
+  const currentCompany =
+    selectedCompany || companies?.find((c) => c.id === selectedCompanyId);
 
   // Filter companies based on debounced search term
   const filteredCompanies = companies?.filter(
@@ -81,9 +83,9 @@ export function CompanySelector({ compact = false }: CompanySelectorProps) {
   const handleCompanySelect = (company: Company) => {
     setSelectedCompany(company);
     setSearchTerm("");
-    toast.success(`Switched to ${company.name}`);
+    toast.success(tCompany("switchedTo", { companyName: company.name }));
     // Invalidate stats to force fresh fetch
-    queryClient.invalidateQueries({ queryKey: ['stats'] });
+    queryClient.invalidateQueries({ queryKey: ["stats"] });
   };
 
   // Loading state
