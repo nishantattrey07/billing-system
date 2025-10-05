@@ -40,9 +40,29 @@ export function QuotationPreview({ formState }: QuotationPreviewProps) {
         </Button>
       </div>
 
-      {/* Preview Container with Scroll */}
-      <div className="flex-1 overflow-auto">
-        <div className="min-h-full flex justify-center py-4">
+      {/* Preview Container with Scroll - simulates print layout */}
+      <div className="flex-1 overflow-auto bg-gray-400 p-8">
+        <style>{`
+          @media screen {
+            .print-preview-page {
+              page-break-after: always;
+              break-after: page;
+            }
+            /* Show page breaks visually */
+            #quotation-pdf-content > div {
+              background:
+                repeating-linear-gradient(
+                  to bottom,
+                  transparent,
+                  transparent 297mm,
+                  #9ca3af 297mm,
+                  #9ca3af calc(297mm + 8px),
+                  transparent calc(297mm + 8px)
+                );
+            }
+          }
+        `}</style>
+        <div className="min-h-full flex justify-center pb-8">
           <div
             style={{
               transform: `scale(${zoom})`,
@@ -50,15 +70,47 @@ export function QuotationPreview({ formState }: QuotationPreviewProps) {
               transition: 'transform 0.2s ease-out',
             }}
           >
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden" style={{ width: '210mm', margin: '0 auto' }} id="quotation-pdf-content">
+            {/* Continuous A4 layout with visual page breaks every 297mm */}
+            <div
+              className="bg-white shadow-xl"
+              style={{
+                width: '210mm',
+                minHeight: '297mm',
+                margin: '0 auto',
+                position: 'relative',
+                backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0, transparent 297mm, #dc2626 297mm, #dc2626 calc(297mm + 3px), transparent calc(297mm + 3px))',
+                backgroundSize: '100% auto'
+              }}
+              id="quotation-pdf-content"
+            >
       {/* A4 Paper Simulation */}
-      <div className="p-12">
-        {/* Header - Company Name as Typography Logo */}
-        <div className="text-center mb-8">
+      <div className="p-12" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Header - Company Name First, Then Details */}
+        <div className="text-center mb-8" style={{ pageBreakInside: 'avoid' }}>
+          {/* Company Name */}
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-1">
             {formState.companyName || 'COMPANY NAME'}
           </h1>
-          <div className="h-1 w-24 mx-auto rounded-full" style={{ backgroundColor: 'rgb(37, 99, 235)' }} />
+          <div className="h-1 w-24 mx-auto rounded-full mb-4" style={{ backgroundColor: 'rgb(37, 99, 235)' }} />
+
+          {/* Company details below name */}
+          <div className="space-y-0.5 text-sm text-gray-700">
+            {formState.companyAddress && (
+              <div className="font-medium">
+                {formState.companyAddress}
+              </div>
+            )}
+            {formState.companyPhone && (
+              <div>
+                Phone: {formState.companyPhone}
+              </div>
+            )}
+            {formState.companyGstin && (
+              <div>
+                GSTIN: {formState.companyGstin}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Quotation Title */}
@@ -139,28 +191,28 @@ export function QuotationPreview({ formState }: QuotationPreviewProps) {
 
         {/* Items Table */}
         <div className="mb-8">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse border-2 border-gray-900">
             <thead>
               <tr className="bg-gray-900 text-white">
-                <th className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-left text-xs font-semibold uppercase">
                   S.No
                 </th>
-                <th className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-left text-xs font-semibold uppercase">
                   Description
                 </th>
-                <th className="border border-gray-300 px-3 py-2 text-center text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-center text-xs font-semibold uppercase">
                   Qty
                 </th>
-                <th className="border border-gray-300 px-3 py-2 text-center text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-center text-xs font-semibold uppercase">
                   Unit
                 </th>
-                <th className="border border-gray-300 px-3 py-2 text-right text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-right text-xs font-semibold uppercase">
                   Rate
                 </th>
-                <th className="border border-gray-300 px-3 py-2 text-right text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-right text-xs font-semibold uppercase">
                   Disc%
                 </th>
-                <th className="border border-gray-300 px-3 py-2 text-right text-xs font-semibold uppercase">
+                <th className="border border-gray-700 px-3 py-2 text-right text-xs font-semibold uppercase">
                   Amount
                 </th>
               </tr>
@@ -170,7 +222,7 @@ export function QuotationPreview({ formState }: QuotationPreviewProps) {
                 <tr>
                   <td
                     colSpan={7}
-                    className="border border-gray-300 px-3 py-8 text-center text-gray-400 italic"
+                    className="border border-gray-700 px-3 py-8 text-center text-gray-400 italic"
                   >
                     No items added yet
                   </td>
@@ -178,28 +230,28 @@ export function QuotationPreview({ formState }: QuotationPreviewProps) {
               ) : (
                 formState.items.map((item, index) => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-center">
+                    <td className="border border-gray-700 px-3 py-2 text-sm text-center">
                       {index + 1}
                     </td>
-                    <td className="border border-gray-300 px-3 py-2 text-sm">
+                    <td className="border border-gray-700 px-3 py-2 text-sm">
                       <div className="font-medium text-gray-900">{item.name || '—'}</div>
                       {item.remarks && (
-                        <div className="text-xs text-gray-600 mt-0.5">{item.remarks}</div>
+                        <div className="text-xs text-gray-800 mt-0.5 font-medium">{item.remarks}</div>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-center">
+                    <td className="border border-gray-700 px-3 py-2 text-sm text-center">
                       {item.quantity.toFixed(3)}
                     </td>
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-center">
+                    <td className="border border-gray-700 px-3 py-2 text-sm text-center">
                       {item.unit}
                     </td>
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-right font-mono">
+                    <td className="border border-gray-700 px-3 py-2 text-sm text-right font-mono text-gray-900">
                       {formatCurrency(item.unitPrice)}
                     </td>
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-center">
+                    <td className="border border-gray-700 px-3 py-2 text-sm text-center">
                       {item.discount > 0 ? `${item.discount.toFixed(2)}%` : '—'}
                     </td>
-                    <td className="border border-gray-300 px-3 py-2 text-sm text-right font-mono font-medium">
+                    <td className="border border-gray-700 px-3 py-2 text-sm text-right font-mono font-medium text-gray-900">
                       {formatCurrency(item.amount)}
                     </td>
                   </tr>
@@ -284,11 +336,20 @@ export function QuotationPreview({ formState }: QuotationPreviewProps) {
         {/* Terms & Conditions */}
         {formState.terms && (
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+            <h3 className="text-base font-bold text-gray-900 uppercase tracking-wide mb-3 underline">
               Terms & Conditions
             </h3>
-            <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded border border-gray-200">
-              {formState.terms}
+            <div className="text-sm text-gray-700 space-y-2">
+              {formState.terms.split('\n').map((line, index) => {
+                const trimmed = line.trim()
+                if (!trimmed) return <div key={index} className="h-2" />
+                return (
+                  <div key={index} className="flex gap-2">
+                    <span className="text-gray-900 font-bold flex-shrink-0">•</span>
+                    <span className="flex-1">{trimmed}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

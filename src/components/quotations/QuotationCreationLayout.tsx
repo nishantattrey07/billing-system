@@ -27,14 +27,15 @@ interface QuotationCreationLayoutProps {
   selectedCompany: {
     id: string
     name: string
-    state: string | null
     gstin: string
+    address: string | null
+    phone: string | null
+    state: string | null
     defaultTerms: string | null
   } | null
 }
 
 export function QuotationCreationLayout({
-  initialCompanies,
   initialCustomers,
   selectedCompany,
 }: QuotationCreationLayoutProps) {

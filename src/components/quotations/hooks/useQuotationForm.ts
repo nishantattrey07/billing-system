@@ -14,10 +14,20 @@ interface UseQuotationFormProps {
   initialCompany?: {
     id: string
     name: string
+    gstin: string
+    address: string | null
+    phone: string | null
     state: string | null
     defaultTerms: string | null
   } | null
-  initialCustomers?: Array<any>
+  initialCustomers?: Array<{
+    id: string
+    name: string
+    gstin?: string | null
+    address?: string | null
+    city?: string | null
+    state?: string | null
+  }>
 }
 
 export interface QuotationItem {
@@ -40,9 +50,12 @@ export interface QuotationFormState {
   validUntil?: Date
   financialYear: string
 
-  // Company (from Zustand - will integrate later)
+  // Company
   companyId: string
   companyName: string
+  companyGstin: string
+  companyAddress: string
+  companyPhone: string
   companyState: string
 
   // Customer
@@ -100,6 +113,9 @@ export function useQuotationForm(props?: UseQuotationFormProps) {
     // Company (from server props or Zustand store)
     companyId: company?.id || '',
     companyName: company?.name || '',
+    companyGstin: company?.gstin || '',
+    companyAddress: company?.address || '',
+    companyPhone: company?.phone || '',
     companyState: company?.state || '',
 
     // Customer
@@ -134,6 +150,22 @@ export function useQuotationForm(props?: UseQuotationFormProps) {
     // Meta
     isDraft: true,
   })
+
+  // Watch for company changes in Zustand store and update form
+  useEffect(() => {
+    if (selectedCompany && selectedCompany.id !== formState.companyId) {
+      setFormState((prev) => ({
+        ...prev,
+        companyId: selectedCompany.id,
+        companyName: selectedCompany.name,
+        companyGstin: selectedCompany.gstin,
+        companyAddress: selectedCompany.address || '',
+        companyPhone: selectedCompany.phone || '',
+        companyState: selectedCompany.state || '',
+        terms: selectedCompany.defaultTerms || prev.terms,
+      }))
+    }
+  }, [selectedCompany, formState.companyId])
 
   // Recalculate amounts whenever items or freight changes
   useEffect(() => {

@@ -14,8 +14,10 @@ async function getInitialData(userId: string) {
       select: {
         id: true,
         name: true,
-        state: true,
         gstin: true,
+        address: true,
+        phone: true,
+        state: true,
         defaultTerms: true,
       },
       orderBy: { name: 'asc' },

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { renderToBuffer } from '@react-pdf/renderer';
-import { QuotationPDFDocument } from '@/lib/pdf/quotation-pdf-template';
 import { format } from 'date-fns';
 import { requireAuth } from '@/lib/api/auth';
 import { numberToWords } from '@/lib/utils/quotation-calculations';
+import { generateQuotationHTML } from '@/lib/pdf/generate-pdf-html';
+import { chromium } from 'playwright';
 
 export async function POST(request: NextRequest) {
+  let browser;
   try {
     // 1. Authenticate user
     const { error: authError } = await requireAuth();
@@ -34,6 +35,9 @@ export async function POST(request: NextRequest) {
     // 4. Format data for PDF template
     const pdfData = {
       companyName: body.companyName,
+      companyGstin: body.companyGstin || '',
+      companyAddress: body.companyAddress,
+      companyPhone: body.companyPhone,
       companyState: body.companyState || '',
       number: body.number || 'DRAFT',
       date: body.date ? format(new Date(body.date), 'dd MMM yyyy') : format(new Date(), 'dd MMM yyyy'),
@@ -45,7 +49,15 @@ export async function POST(request: NextRequest) {
       customerAddress: body.customerAddress,
       customerCity: body.customerCity,
       customerState: body.customerState,
-      items: body.items.map((item: any) => ({
+      items: body.items.map((item: {
+        name: string;
+        remarks?: string;
+        quantity: number;
+        unit: string;
+        unitPrice: number;
+        discount?: number;
+        amount: number;
+      }) => ({
         name: item.name,
         remarks: item.remarks,
         quantity: Number(item.quantity),
@@ -64,15 +76,35 @@ export async function POST(request: NextRequest) {
       terms: body.terms,
     };
 
-    // 5. Generate PDF buffer
-    const pdfBuffer = await renderToBuffer(
-      <QuotationPDFDocument data={pdfData} />
-    );
+    // 5. Generate HTML
+    const html = generateQuotationHTML(pdfData);
 
-    // 6. Return PDF as downloadable file
+    // 6. Launch Playwright Chromium and generate PDF
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle' });
+
+    // Generate PDF with proper settings
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      },
+    });
+
+    await browser.close();
+
+    // 7. Return PDF as downloadable file
     const filename = `Quotation-${body.number || 'draft'}.pdf`;
 
-    return new NextResponse(pdfBuffer as any, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -81,6 +113,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (browser) {
+      await browser.close();
+    }
     console.error('PDF generation error:', error);
     return NextResponse.json(
       {
@@ -94,6 +129,7 @@ export async function POST(request: NextRequest) {
 
 // Optional: GET endpoint to generate PDF from saved quotation
 export async function GET(request: NextRequest) {
+  let browser;
   try {
     const { error: authError } = await requireAuth();
     if (authError) return authError;
@@ -125,6 +161,9 @@ export async function GET(request: NextRequest) {
     // Format data
     const pdfData = {
       companyName: quotation.company.name,
+      companyGstin: quotation.company.gstin,
+      companyAddress: quotation.company.address || undefined,
+      companyPhone: quotation.company.phone || undefined,
       companyState: quotation.company.state || '',
       number: quotation.number,
       date: format(quotation.date, 'dd MMM yyyy'),
@@ -155,10 +194,31 @@ export async function GET(request: NextRequest) {
       terms: quotation.terms || undefined,
     };
 
-    // Generate PDF
-    const pdfBuffer = await renderToBuffer(<QuotationPDFDocument data={pdfData} />);
+    // Generate HTML
+    const html = generateQuotationHTML(pdfData);
 
-    return new NextResponse(pdfBuffer as any, {
+    // Launch Playwright Chromium
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      },
+    });
+
+    await browser.close();
+
+    return new NextResponse(Buffer.from(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -167,6 +227,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (browser) {
+      await browser.close();
+    }
     console.error('PDF generation error:', error);
     return NextResponse.json(
       { error: 'Failed to generate PDF' },

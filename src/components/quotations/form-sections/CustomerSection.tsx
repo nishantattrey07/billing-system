@@ -25,7 +25,14 @@ export function CustomerSection({ formState, safetyMode }: CustomerSectionProps)
 
   const customers = customersData?.pages.flatMap((page) => page.data) || []
 
-  const handleSelectCustomer = (customer: any) => {
+  const handleSelectCustomer = (customer: {
+    id: string
+    name: string
+    gstin?: string | null
+    address?: string | null
+    city?: string | null
+    state?: string | null
+  }) => {
     formState.updateField('customerId', customer.id)
     formState.updateField('customerName', customer.name)
     formState.updateField('customerGstin', customer.gstin || '')

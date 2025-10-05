@@ -12,6 +12,7 @@ interface QuotationActionBarProps {
 
 export function QuotationActionBar({ formState, safetyMode }: QuotationActionBarProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Check if all safety checks are completed
   const allSafetyChecksComplete = safetyMode
@@ -24,9 +25,53 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
   ).length
   const totalChecks = Object.keys(formState.safetyChecks).length
 
-  const handleSaveDraft = () => {
-    // TODO: Implement save draft functionality
-    console.log('Save draft clicked')
+  const handleSaveDraft = async () => {
+    setIsSaving(true)
+
+    try {
+      const draftData = {
+        companyId: formState.companyId,
+        number: formState.number,
+        date: formState.date,
+        subject: formState.subject,
+        financialYear: formState.financialYear,
+        customerId: formState.customerId,
+        customerName: formState.customerName,
+        customerGstin: formState.customerGstin,
+        customerAddress: formState.customerAddress,
+        customerCity: formState.customerCity,
+        customerState: formState.customerState,
+        items: formState.items,
+        freightCharges: formState.freightCharges,
+        terms: formState.terms,
+        validUntil: formState.validUntil,
+      }
+
+      const response = await fetch('/api/quotations/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draftData),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save draft')
+      }
+
+      await response.json()
+
+      // Update lastSaved timestamp
+      formState.updateField('lastSaved', new Date())
+
+      const { toast } = await import('sonner')
+      toast.success('Draft saved successfully!')
+    } catch (error) {
+      console.error('Save draft error:', error)
+      const { toast } = await import('sonner')
+      toast.error(error instanceof Error ? error.message : 'Failed to save draft')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleDownloadPDF = async () => {
@@ -38,6 +83,9 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
       // Prepare quotation data for server
       const quotationData = {
         companyName: formState.companyName,
+        companyGstin: formState.companyGstin,
+        companyAddress: formState.companyAddress,
+        companyPhone: formState.companyPhone,
         companyState: formState.companyState,
         number: formState.number,
         date: formState.date,
@@ -70,8 +118,16 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to generate PDF')
+        let errorMessage = 'Failed to generate PDF'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || error.details || errorMessage
+        } catch {
+          // If response is not JSON, try to get text
+          const text = await response.text()
+          errorMessage = text || `Server error (${response.status})`
+        }
+        throw new Error(errorMessage)
       }
 
       // Download the PDF
@@ -127,9 +183,18 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
         {/* Right Side - Action Buttons */}
         <div className="flex items-center gap-3">
           {/* Save Draft */}
-          <Button variant="outline" onClick={handleSaveDraft}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
+          <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
+              </>
+            )}
           </Button>
 
           {/* Email */}
