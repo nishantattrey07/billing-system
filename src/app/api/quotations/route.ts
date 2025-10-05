@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
         { subject: { contains: search, mode: 'insensitive' as const } },
         { customerName: { contains: search, mode: 'insensitive' as const } },
         { customerGstin: { contains: search, mode: 'insensitive' as const } },
+        { items: { some: { name: { contains: search, mode: 'insensitive' as const } } } },
+        { items: { some: { remarks: { contains: search, mode: 'insensitive' as const } } } },
       ]
     }
 
@@ -92,11 +94,11 @@ export async function POST(request: NextRequest) {
 
     const data = result.data
 
-    // Get company and customer for state information
+    // Get company and customer for state information and default terms
     const [company, customer] = await Promise.all([
       prisma.company.findUnique({
         where: { id: data.companyId },
-        select: { state: true },
+        select: { state: true, defaultTerms: true },
       }),
       prisma.customer.findUnique({
         where: { id: data.customerId },
@@ -144,9 +146,9 @@ export async function POST(request: NextRequest) {
           sgst: calculations.sgst,
           igst: calculations.igst,
           total: calculations.total,
-          terms: data.terms || null,
+          terms: data.terms || company.defaultTerms || null,
           validUntil: data.validUntil || null,
-          populatedByAI: data.populatedByAI,
+          isPopulatedByAI: data.isPopulatedByAI,
           status: 'DRAFT',
         },
         include: {

@@ -15,6 +15,7 @@ export const companySchema = z.object({
   accountNumber: z.string().max(50).optional().or(z.literal('')),
   ifscCode: z.string().regex(IFSC_REGEX, 'Invalid IFSC code').optional().or(z.literal('')),
   branch: z.string().max(100).optional().or(z.literal('')),
+  defaultTerms: z.string().max(5000, 'Terms too long').optional().or(z.literal('')),
 })
 
 export const updateCompanySchema = companySchema.partial().extend({

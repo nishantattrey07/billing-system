@@ -38,6 +38,7 @@ model Company {
   accountNumber String?  @map("account_number")
   ifscCode      String?  @map("ifsc_code")
   branch        String?
+  defaultTerms  String?  @db.Text @map("default_terms")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -134,7 +135,7 @@ model QuotationItem {
     
     // Safety check
     safetyCheckCompleted Boolean @default(false)
-    populatedByAI        Boolean @default(false)
+    isPopulatedByAI        Boolean @default(false)
     
     status          DocumentStatus @default(DRAFT)
     

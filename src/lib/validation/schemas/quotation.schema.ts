@@ -44,7 +44,7 @@ export const quotationSchema = z.object({
   validUntil: z.coerce.date().optional(),
 
   // Metadata
-  populatedByAI: z.boolean().default(false),
+  isPopulatedByAI: z.boolean().default(false),
 })
 
 // For updating quotation
