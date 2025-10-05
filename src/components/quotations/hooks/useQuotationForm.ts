@@ -9,6 +9,17 @@ import {
 import { getCurrentFinancialYear } from '@/lib/utils/quotation-number'
 import { useStore } from '@/lib/store/useStore'
 
+// Props interface for initial data from server
+interface UseQuotationFormProps {
+  initialCompany?: {
+    id: string
+    name: string
+    state: string | null
+    defaultTerms: string | null
+  } | null
+  initialCustomers?: Array<any>
+}
+
 export interface QuotationItem {
   id: string
   name: string
@@ -73,8 +84,11 @@ export interface QuotationFormState {
   lastSaved?: Date
 }
 
-export function useQuotationForm() {
+export function useQuotationForm(props?: UseQuotationFormProps) {
   const selectedCompany = useStore((state) => state.selectedCompany)
+
+  // Use server-provided company if available, otherwise fall back to Zustand
+  const company = props?.initialCompany || selectedCompany
 
   const [formState, setFormState] = useState<QuotationFormState>({
     // Initialize with defaults
@@ -83,10 +97,10 @@ export function useQuotationForm() {
     subject: '',
     financialYear: getCurrentFinancialYear(),
 
-    // Company (from Zustand store)
-    companyId: selectedCompany?.id || '',
-    companyName: selectedCompany?.name || '',
-    companyState: selectedCompany?.state || '',
+    // Company (from server props or Zustand store)
+    companyId: company?.id || '',
+    companyName: company?.name || '',
+    companyState: company?.state || '',
 
     // Customer
     customerId: '',
@@ -105,8 +119,8 @@ export function useQuotationForm() {
     total: 0,
     totalInWords: '',
 
-    // Terms
-    terms: '',
+    // Terms - use company default terms if available
+    terms: company?.defaultTerms || '',
 
     // Safety Checks
     safetyChecks: {
@@ -142,8 +156,8 @@ export function useQuotationForm() {
 
     const gst = calculateGST(
       subtotal + formState.freightCharges,
-      formState.companyState,
-      formState.customerState
+      formState.companyState || '',
+      formState.customerState || ''
     )
 
     const total = calculateTotal(subtotal, formState.freightCharges, gst)

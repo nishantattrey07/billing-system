@@ -34,56 +34,67 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
 
     setIsGeneratingPDF(true)
 
-    // Wrap in setTimeout to prevent blocking the UI
-    setTimeout(async () => {
-      try {
-        // Dynamically import html2pdf
-        const html2pdf = (await import('html2pdf.js')).default
-
-        const element = document.getElementById('quotation-pdf-content')
-        if (!element) {
-          console.error('PDF content element not found')
-          setIsGeneratingPDF(false)
-          return
-        }
-
-        // A4 size configuration - minimal onclone for performance
-        const opt = {
-          margin: 0,
-          filename: `Quotation-${formState.number || 'draft'}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            letterRendering: true,
-            logging: false,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight,
-            onclone: (clonedDoc: Document) => {
-              // Minimal processing - only fix essential styling
-              const clonedContent = clonedDoc.getElementById('quotation-pdf-content')
-              if (clonedContent) {
-                // Ensure white background
-                (clonedContent as HTMLElement).style.backgroundColor = '#ffffff'
-              }
-            },
-          },
-          jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'portrait',
-          },
-        }
-
-        await html2pdf().set(opt).from(element).save()
-      } catch (error) {
-        console.error('Error generating PDF:', error)
-        alert('Failed to generate PDF. Please try again.')
-      } finally {
-        setIsGeneratingPDF(false)
+    try {
+      // Prepare quotation data for server
+      const quotationData = {
+        companyName: formState.companyName,
+        companyState: formState.companyState,
+        number: formState.number,
+        date: formState.date,
+        validUntil: formState.validUntil,
+        financialYear: formState.financialYear,
+        subject: formState.subject,
+        customerName: formState.customerName,
+        customerGstin: formState.customerGstin,
+        customerAddress: formState.customerAddress,
+        customerCity: formState.customerCity,
+        customerState: formState.customerState,
+        items: formState.items,
+        freightCharges: formState.freightCharges,
+        subtotal: formState.subtotal,
+        sgst: formState.sgst,
+        cgst: formState.cgst,
+        igst: formState.igst,
+        total: formState.total,
+        totalInWords: formState.totalInWords,
+        terms: formState.terms,
       }
-    }, 100)
+
+      // Call server API to generate PDF
+      const response = await fetch('/api/quotations/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(quotationData),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate PDF')
+      }
+
+      // Download the PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Quotation-${formState.number || 'draft'}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      // Success notification (using sonner)
+      const { toast } = await import('sonner')
+      toast.success('PDF generated successfully!')
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      const { toast } = await import('sonner')
+      toast.error(error instanceof Error ? error.message : 'Failed to generate PDF. Please try again.')
+    } finally {
+      setIsGeneratingPDF(false)
+    }
   }
 
   const handleEmail = () => {

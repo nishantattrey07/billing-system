@@ -7,9 +7,44 @@ import { QuotationTopBar } from './QuotationTopBar'
 import { QuotationActionBar } from './QuotationActionBar'
 import { useQuotationForm } from './hooks/useQuotationForm'
 
-export function QuotationCreationLayout() {
+// Props from server
+interface QuotationCreationLayoutProps {
+  initialCompanies: Array<{
+    id: string
+    name: string
+    state: string | null
+    gstin: string
+    defaultTerms: string | null
+  }>
+  initialCustomers: Array<{
+    id: string
+    name: string
+    gstin: string | null
+    address: string | null
+    city: string | null
+    state: string | null
+  }>
+  selectedCompany: {
+    id: string
+    name: string
+    state: string | null
+    gstin: string
+    defaultTerms: string | null
+  } | null
+}
+
+export function QuotationCreationLayout({
+  initialCompanies,
+  initialCustomers,
+  selectedCompany,
+}: QuotationCreationLayoutProps) {
   const [safetyMode, setSafetyMode] = useState(false)
-  const formState = useQuotationForm()
+
+  // Pass server data to form hook
+  const formState = useQuotationForm({
+    initialCompany: selectedCompany,
+    initialCustomers,
+  })
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
