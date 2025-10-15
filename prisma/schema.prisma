@@ -42,12 +42,20 @@ model Company {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  // Audit trail
+  updatedBy     String?  @db.Uuid @map("updated_by")
+
+  // Soft delete
+  deletedAt     DateTime? @map("deleted_at")
+  deletedBy     String?   @db.Uuid @map("deleted_by")
+
   quotations Quotation[]
   invoices   Invoice[]
   challans   Challan[]
 
   @@index([userId, createdAt]) // For fetching user's companies
   @@index([name, gstin, city]) // For search performance
+  @@index([deletedAt]) // For filtering deleted records
   @@map("companies")
 }
 
@@ -67,12 +75,20 @@ model Customer {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  // Audit trail
+  updatedBy     String?  @db.Uuid @map("updated_by")
+
+  // Soft delete
+  deletedAt     DateTime? @map("deleted_at")
+  deletedBy     String?   @db.Uuid @map("deleted_by")
+
   quotations Quotation[]
   invoices   Invoice[]
   challans   Challan[]
 
   @@index([userId, createdAt]) // For fetching user's customers
   @@index([name, city, contactPerson]) // For search
+  @@index([deletedAt]) // For filtering deleted records
   @@map("customers")
 }
 
@@ -94,7 +110,12 @@ model QuotationItem {
     createdAt   DateTime   @default(now())
     updatedAt   DateTime   @updatedAt
 
+    // Soft delete (cascade when quotation is deleted)
+    deletedAt   DateTime? @map("deleted_at")
+    deletedBy   String?   @db.Uuid @map("deleted_by")
+
     @@index([quotationId, sortOrder])
+    @@index([deletedAt])
     @@map("quotation_items")
   }
 
@@ -103,7 +124,7 @@ model QuotationItem {
     number          String    // Editable: "Q.no: 27"
     date            DateTime  @default(now())
     subject         String    // "Quotation for Super Blower Repair"
-    
+
     companyId       String    @db.Uuid
     customerId      String    @db.Uuid
     company         Company   @relation(fields: [companyId], references: [id])
@@ -115,12 +136,12 @@ model QuotationItem {
     customerAddress String?
     customerCity    String?
     customerState   String?
-    
+
     financialYear   String    // "2024-25"
-    
+
     // Items in separate table
     items           QuotationItem[]
-    
+
     // Amounts with 3 decimal precision
     freightCharges  Decimal   @default(0) @db.Decimal(12, 3)
     subtotal        Decimal   @db.Decimal(15, 3)  // Sum of all item amounts (3 decimals)
@@ -128,22 +149,30 @@ model QuotationItem {
     sgst            Decimal   @db.Decimal(15, 3)  // Calculated with 3 decimals
     igst            Decimal   @db.Decimal(15, 3)  // Calculated with 3 decimals
     total           Decimal   @db.Decimal(15, 2)  // Final total (2 decimals only)
-    
+
     // Additional fields
     terms           String?   @db.Text
     validUntil      DateTime?
-    
+
     // Safety check
     safetyCheckCompleted Boolean @default(false)
     isPopulatedByAI        Boolean @default(false)
-    
+
     status          DocumentStatus @default(DRAFT)
-    
+
     createdAt       DateTime  @default(now())
     updatedAt       DateTime  @updatedAt
 
+    // Audit trail
+    updatedBy       String?   @db.Uuid @map("updated_by")
+
+    // Soft delete
+    deletedAt       DateTime? @map("deleted_at")
+    deletedBy       String?   @db.Uuid @map("deleted_by")
+
     @@unique([companyId, financialYear, number])
     @@index([companyId, status, createdAt])
+    @@index([deletedAt])
     @@map("quotations")
   }
 
@@ -190,9 +219,17 @@ model Invoice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Audit trail
+  updatedBy String? @db.Uuid @map("updated_by")
+
+  // Soft delete
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @db.Uuid @map("deleted_by")
+
   @@unique([companyId, financialYear, number])
   @@index([companyId, status, createdAt])
   @@index([dueDate, status])
+  @@index([deletedAt])
   @@map("invoices")
 }
 
@@ -236,8 +273,16 @@ model Challan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Audit trail
+  updatedBy String? @db.Uuid @map("updated_by")
+
+  // Soft delete
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @db.Uuid @map("deleted_by")
+
   @@unique([companyId, financialYear, number])
   @@index([companyId, status, createdAt])
   @@index([invoiceId])
+  @@index([deletedAt])
   @@map("challans")
 }
