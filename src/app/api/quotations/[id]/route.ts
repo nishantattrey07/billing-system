@@ -170,6 +170,7 @@ export async function PUT(
           total: amountsToUse.total,
           terms: data.terms,
           validUntil: data.validUntil,
+          status: data.status, // Allow status updates
           updatedBy: user!.id, // Audit trail
         },
         include: {

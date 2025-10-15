@@ -2,9 +2,11 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { Save, Download, Mail, CheckCircle2, Loader2 } from 'lucide-react'
+import { Save, Download, Mail, CheckCircle2, Loader2, Send } from 'lucide-react'
 import type { useQuotationForm } from './hooks/useQuotationForm'
+import { quotationKeys } from '@/lib/hooks/useQuotations'
 
 interface QuotationActionBarProps {
   formState: ReturnType<typeof useQuotationForm>
@@ -15,8 +17,10 @@ interface QuotationActionBarProps {
 export function QuotationActionBar({ formState, safetyMode, quotationId }: QuotationActionBarProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isMarkingAsSent, setIsMarkingAsSent] = useState(false)
   const savedQuotationIdRef = useRef<string | null>(quotationId || null)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   // Check if all safety checks are completed
   const allSafetyChecksComplete = safetyMode
@@ -81,6 +85,12 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
       // Update lastSaved timestamp
       formState.updateField('lastSaved', new Date())
 
+      // Invalidate quotations list cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: quotationKeys.lists() })
+      if (newQuotationId) {
+        queryClient.invalidateQueries({ queryKey: quotationKeys.detail(newQuotationId) })
+      }
+
       if (!silent) {
         const { toast } = await import('sonner')
         toast.success(`Quotation ${currentQuotationId ? 'updated' : 'saved'} successfully!`)
@@ -143,6 +153,12 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
       // Success notification
       toast.success('Quotation saved and PDF downloaded successfully!')
 
+      // Invalidate cache before redirect
+      queryClient.invalidateQueries({ queryKey: quotationKeys.lists() })
+      if (savedId) {
+        queryClient.invalidateQueries({ queryKey: quotationKeys.detail(savedId) })
+      }
+
       // If this was a new quotation, redirect to edit page with the new ID
       if (!quotationId && savedId) {
         setTimeout(() => {
@@ -155,6 +171,46 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
       toast.error(error instanceof Error ? error.message : 'Failed to generate PDF. Please try again.')
     } finally {
       setIsGeneratingPDF(false)
+    }
+  }
+
+  const handleMarkAsSent = async () => {
+    const currentQuotationId = savedQuotationIdRef.current || quotationId
+    if (!currentQuotationId) {
+      const { toast } = await import('sonner')
+      toast.error('Please save the quotation first')
+      return
+    }
+
+    setIsMarkingAsSent(true)
+
+    try {
+      const response = await fetch(`/api/quotations/${currentQuotationId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'SENT' }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update status')
+      }
+
+      // Invalidate cache to refresh the data
+      queryClient.invalidateQueries({ queryKey: quotationKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: quotationKeys.detail(currentQuotationId) })
+
+      const { toast } = await import('sonner')
+      toast.success('Quotation marked as sent!')
+
+      // Optionally refresh the page to show updated status
+      router.refresh()
+    } catch (error) {
+      console.error('Mark as sent error:', error)
+      const { toast } = await import('sonner')
+      toast.error(error instanceof Error ? error.message : 'Failed to mark as sent')
+    } finally {
+      setIsMarkingAsSent(false)
     }
   }
 
@@ -198,6 +254,26 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
               <>
                 <Save className="w-4 h-4 mr-2" />
                 {savedQuotationIdRef.current || quotationId ? 'Update Quotation' : 'Save Draft'}
+              </>
+            )}
+          </Button>
+
+          {/* Mark as Sent */}
+          <Button
+            variant="outline"
+            onClick={handleMarkAsSent}
+            disabled={isMarkingAsSent || !savedQuotationIdRef.current && !quotationId}
+            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+          >
+            {isMarkingAsSent ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Mark as Sent
               </>
             )}
           </Button>

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { FileText, MoreVertical, Pencil, Download, Trash2, History } from 'lucide-react'
+import { FileText, MoreVertical, Pencil, Download, Trash2, History, Send } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useDeleteQuotation } from '@/lib/hooks/useQuotations'
+import { useDeleteQuotation, quotationKeys } from '@/lib/hooks/useQuotations'
 import { formatCurrency } from '@/lib/utils/quotation-calculations'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AuditLogTimeline } from '@/components/audit/AuditLogTimeline'
@@ -59,8 +60,10 @@ export function QuotationCard({ quotation }: QuotationCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showHistoryDialog, setShowHistoryDialog] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   const deleteMutation = useDeleteQuotation()
+  const queryClient = useQueryClient()
   const statusInfo = statusConfig[quotation.status]
 
   const handleDelete = async () => {
@@ -72,6 +75,34 @@ export function QuotationCard({ quotation }: QuotationCardProps) {
     } catch {
       const { toast } = await import('sonner')
       toast.error('Failed to delete quotation')
+    }
+  }
+
+  const handleMarkAsSent = async () => {
+    setIsUpdatingStatus(true)
+    try {
+      const response = await fetch(`/api/quotations/${quotation.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'SENT' }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update status')
+      }
+
+      // Invalidate cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: quotationKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: quotationKeys.detail(quotation.id) })
+
+      const { toast } = await import('sonner')
+      toast.success('Quotation marked as sent!')
+    } catch (error) {
+      const { toast } = await import('sonner')
+      toast.error(error instanceof Error ? error.message : 'Failed to mark as sent')
+    } finally {
+      setIsUpdatingStatus(false)
     }
   }
 
@@ -168,6 +199,12 @@ export function QuotationCard({ quotation }: QuotationCardProps) {
                   <Download className="mr-2 h-4 w-4" />
                   {isDownloading ? 'Downloading...' : 'Download PDF'}
                 </DropdownMenuItem>
+                {quotation.status === 'DRAFT' && (
+                  <DropdownMenuItem onClick={handleMarkAsSent} disabled={isUpdatingStatus}>
+                    <Send className="mr-2 h-4 w-4" />
+                    {isUpdatingStatus ? 'Updating...' : 'Mark as Sent'}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => setShowHistoryDialog(true)}>
                   <History className="mr-2 h-4 w-4" />
                   View History

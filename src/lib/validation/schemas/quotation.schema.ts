@@ -43,6 +43,9 @@ export const quotationSchema = z.object({
   terms: z.string().max(5000).optional().or(z.literal('')),
   validUntil: z.coerce.date().optional(),
 
+  // Status
+  status: z.enum(['DRAFT', 'SENT', 'PAID', 'UNPAID']).optional(),
+
   // Metadata
   isPopulatedByAI: z.boolean().default(false),
 })
