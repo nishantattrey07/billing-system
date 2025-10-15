@@ -22,6 +22,13 @@ enum DocumentStatus {
   UNPAID
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+}
+
 model Company {
   id            String   @id @default(uuid()) @db.Uuid
   userId        String   @db.Uuid @map("user_id") // Creator/owner for audit trail
@@ -285,4 +292,39 @@ model Challan {
   @@index([invoiceId])
   @@index([deletedAt])
   @@map("challans")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+
+  // Action details
+  action    AuditAction  // CREATE, UPDATE, DELETE, RESTORE
+  entity    String       // "quotation", "company", "customer", etc.
+  entityId  String       @db.Uuid @map("entity_id")
+
+  // User context
+  userId    String   @db.Uuid @map("user_id")
+  userEmail String?  @map("user_email") // Denormalized for easy querying
+
+  // Change tracking (JSON for flexibility)
+  before    Json?    // Snapshot of data before change (UPDATE, DELETE)
+  after     Json?    // Snapshot of data after change (CREATE, UPDATE)
+  changes   Json?    // Computed diff of changed fields only
+
+  // Request metadata
+  ipAddress String?  @map("ip_address") // x-forwarded-for or x-real-ip
+  userAgent String?  @db.Text @map("user_agent") // Browser/client info
+
+  // Additional context
+  description String?  @db.Text // Human-readable description
+  metadata    Json?    // Extra context (e.g., reason for deletion, bulk operation ID)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Indexes for common queries
+  @@index([entity, entityId])        // Find all logs for a specific record
+  @@index([userId, createdAt])       // Find all actions by a user
+  @@index([entity, action, createdAt]) // Find all actions of a type
+  @@index([createdAt])               // Time-based queries
+  @@map("audit_logs")
 }
