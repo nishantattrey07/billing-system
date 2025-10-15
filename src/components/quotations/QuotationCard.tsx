@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { FileText, MoreVertical, Pencil, Download, Trash2 } from 'lucide-react'
+import { FileText, MoreVertical, Pencil, Download, Trash2, History } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useDeleteQuotation } from '@/lib/hooks/useQuotations'
 import { formatCurrency } from '@/lib/utils/quotation-calculations'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { AuditLogTimeline } from '@/components/audit/AuditLogTimeline'
 
 interface QuotationCardProps {
   quotation: {
@@ -55,6 +57,7 @@ const statusConfig = {
 export function QuotationCard({ quotation }: QuotationCardProps) {
   const tCommon = useTranslations('common')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
 
   const deleteMutation = useDeleteQuotation()
@@ -165,6 +168,10 @@ export function QuotationCard({ quotation }: QuotationCardProps) {
                   <Download className="mr-2 h-4 w-4" />
                   {isDownloading ? 'Downloading...' : 'Download PDF'}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowHistoryDialog(true)}>
+                  <History className="mr-2 h-4 w-4" />
+                  View History
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setShowDeleteDialog(true)}
@@ -199,6 +206,16 @@ export function QuotationCard({ quotation }: QuotationCardProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Audit History Dialog */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Audit History - {quotation.number}</DialogTitle>
+          </DialogHeader>
+          <AuditLogTimeline entity="quotation" entityId={quotation.id} />
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
