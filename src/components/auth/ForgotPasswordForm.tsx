@@ -54,7 +54,8 @@ export function ForgotPasswordForm() {
       // Show success message
       setSuccess(true)
       form.reset()
-    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_err) {
       setError(t('auth.unexpectedError'))
     } finally {
       setIsLoading(false)

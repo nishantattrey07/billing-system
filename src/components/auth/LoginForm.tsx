@@ -41,17 +41,40 @@ export function LoginForm() {
     setError(null)
 
     try {
+      // Check rate limit before attempting login
+      const rateLimitResponse = await fetch('/api/auth/check-rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: values.email }),
+      })
+
+      const rateLimitData = await rateLimitResponse.json()
+
+      if (!rateLimitData.allowed) {
+        setError(rateLimitData.message || 'Too many attempts. Please try again later.')
+        return
+      }
+
+      // Attempt login
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: loginError } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       })
 
-      if (error) {
-        setError(error.message)
+      if (loginError) {
+        // Record failed attempt
+        await fetch('/api/auth/check-rate-limit', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: values.email, success: false }),
+        })
+
+        setError(loginError.message)
         return
       }
 
+      // Success - redirect to dashboard
       router.push('/dashboard')
       router.refresh()
     } catch {

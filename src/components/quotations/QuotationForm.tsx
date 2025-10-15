@@ -5,7 +5,6 @@ import { CustomerSection } from './form-sections/CustomerSection'
 import { ItemsSection } from './form-sections/ItemsSection'
 import { CalculationsSection } from './form-sections/CalculationsSection'
 import { TermsSection } from './form-sections/TermsSection'
-import type { QuotationFormState } from './hooks/useQuotationForm'
 
 interface QuotationFormProps {
   formState: ReturnType<typeof import('./hooks/useQuotationForm').useQuotationForm>

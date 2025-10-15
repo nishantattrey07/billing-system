@@ -1,5 +1,4 @@
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
-import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
@@ -14,7 +13,7 @@ export default function ForgotPasswordPage() {
 
       <ForgotPasswordForm />
 
-      <div className="space-y-2 text-center text-sm">
+      <div className="text-center text-sm">
         <p className="text-muted-foreground">
           Remember your password?{' '}
           <Link
@@ -22,15 +21,6 @@ export default function ForgotPasswordPage() {
             className="font-medium text-primary hover:underline"
           >
             Back to login
-          </Link>
-        </p>
-        <p className="text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link
-            href="/signup"
-            className="font-medium text-primary hover:underline"
-          >
-            Sign up
           </Link>
         </p>
       </div>

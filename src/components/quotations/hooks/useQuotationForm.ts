@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   calculateItemAmount,
   calculateSubtotal,
@@ -229,6 +229,12 @@ export function useQuotationForm(props?: UseQuotationFormProps) {
     }
   }, [selectedCompany, formState.companyId])
 
+  // Memoize items key for dependency tracking
+  const itemsKey = useMemo(
+    () => formState.items.map(i => `${i.quantity}-${i.unitPrice}-${i.discount}`).join(','),
+    [formState.items]
+  )
+
   // Recalculate amounts whenever items or freight changes
   useEffect(() => {
     const itemsWithAmounts = formState.items.map((item) => {
@@ -267,9 +273,9 @@ export function useQuotationForm(props?: UseQuotationFormProps) {
       total,
       totalInWords,
     }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    formState.items.length,
-    formState.items.map(i => `${i.quantity}-${i.unitPrice}-${i.discount}`).join(','),
+    itemsKey,
     formState.freightCharges,
     formState.companyState,
     formState.customerState,

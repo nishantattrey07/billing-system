@@ -86,7 +86,8 @@ export function ResetPasswordForm() {
       // Password updated successfully
       // Redirect to login page with success message
       router.push('/login?reset=success')
-    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_err) {
       setError(t('auth.unexpectedError'))
     } finally {
       setIsLoading(false)
