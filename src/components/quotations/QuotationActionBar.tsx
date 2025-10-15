@@ -8,11 +8,14 @@ import type { useQuotationForm } from './hooks/useQuotationForm'
 interface QuotationActionBarProps {
   formState: ReturnType<typeof useQuotationForm>
   safetyMode: boolean
+  quotationId?: string
 }
 
-export function QuotationActionBar({ formState, safetyMode }: QuotationActionBarProps) {
+export function QuotationActionBar({ formState, safetyMode, quotationId }: QuotationActionBarProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  const isEditMode = !!quotationId
 
   // Check if all safety checks are completed
   const allSafetyChecksComplete = safetyMode
@@ -25,11 +28,11 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
   ).length
   const totalChecks = Object.keys(formState.safetyChecks).length
 
-  const handleSaveDraft = async () => {
+  const handleSave = async () => {
     setIsSaving(true)
 
     try {
-      const draftData = {
+      const quotationData = {
         companyId: formState.companyId,
         number: formState.number,
         date: formState.date,
@@ -47,15 +50,18 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
         validUntil: formState.validUntil,
       }
 
-      const response = await fetch('/api/quotations/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(draftData),
-      })
+      const response = await fetch(
+        isEditMode ? `/api/quotations/${quotationId}` : '/api/quotations/draft',
+        {
+          method: isEditMode ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(quotationData),
+        }
+      )
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to save draft')
+        throw new Error(error.error || `Failed to ${isEditMode ? 'update' : 'save'} quotation`)
       }
 
       await response.json()
@@ -64,11 +70,11 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
       formState.updateField('lastSaved', new Date())
 
       const { toast } = await import('sonner')
-      toast.success('Draft saved successfully!')
+      toast.success(`Quotation ${isEditMode ? 'updated' : 'saved'} successfully!`)
     } catch (error) {
-      console.error('Save draft error:', error)
+      console.error('Save error:', error)
       const { toast } = await import('sonner')
-      toast.error(error instanceof Error ? error.message : 'Failed to save draft')
+      toast.error(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'save'} quotation`)
     } finally {
       setIsSaving(false)
     }
@@ -182,17 +188,17 @@ export function QuotationActionBar({ formState, safetyMode }: QuotationActionBar
 
         {/* Right Side - Action Buttons */}
         <div className="flex items-center gap-3">
-          {/* Save Draft */}
-          <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+          {/* Save/Update */}
+          <Button variant="outline" onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
+                {isEditMode ? 'Updating...' : 'Saving...'}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Draft
+                {isEditMode ? 'Update Quotation' : 'Save Draft'}
               </>
             )}
           </Button>

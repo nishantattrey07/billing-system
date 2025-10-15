@@ -142,5 +142,25 @@
     "updateError": "Failed to update",
     "deleteError": "Failed to delete",
     "loadError": "Failed to load data"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending...",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordResetSent": "Password reset link sent to your email",
+    "checkEmail": "Check your email for reset instructions",
+    "passwordResetSuccess": "Password updated successfully",
+    "invalidResetLink": "Invalid or expired reset link",
+    "resetLinkExpired": "This password reset link has expired or is invalid. Please request a new one.",
+    "requestNewLink": "Request new reset link",
+    "passwordMismatch": "Passwords don't match",
+    "passwordRequirements": "Must be at least 8 characters with uppercase, lowercase, and number",
+    "resetting": "Resetting password...",
+    "unexpectedError": "An unexpected error occurred. Please try again."
   }
 }

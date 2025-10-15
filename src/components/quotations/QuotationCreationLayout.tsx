@@ -6,6 +6,7 @@ import { QuotationPreview } from './QuotationPreview'
 import { QuotationTopBar } from './QuotationTopBar'
 import { QuotationActionBar } from './QuotationActionBar'
 import { useQuotationForm } from './hooks/useQuotationForm'
+import type { QuotationItem } from './hooks/useQuotationForm'
 
 // Props from server
 interface QuotationCreationLayoutProps {
@@ -33,11 +34,35 @@ interface QuotationCreationLayoutProps {
     state: string | null
     defaultTerms: string | null
   } | null
+  existingQuotation?: {
+    id: string
+    number: string
+    date: Date
+    subject: string
+    financialYear: string
+    companyId: string
+    companyName: string
+    companyGstin: string
+    companyAddress: string | null
+    companyPhone: string | null
+    companyState: string | null
+    customerId: string
+    customerName: string
+    customerGstin: string | null
+    customerAddress: string | null
+    customerCity: string | null
+    customerState: string | null
+    items: QuotationItem[]
+    freightCharges: number
+    termsAndConditions: string
+    status: string
+  }
 }
 
 export function QuotationCreationLayout({
   initialCustomers,
   selectedCompany,
+  existingQuotation,
 }: QuotationCreationLayoutProps) {
   const [safetyMode, setSafetyMode] = useState(false)
 
@@ -45,6 +70,7 @@ export function QuotationCreationLayout({
   const formState = useQuotationForm({
     initialCompany: selectedCompany,
     initialCustomers,
+    existingQuotation,
   })
 
   return (
@@ -78,6 +104,7 @@ export function QuotationCreationLayout({
       <QuotationActionBar
         formState={formState}
         safetyMode={safetyMode}
+        quotationId={existingQuotation?.id}
       />
     </div>
   )

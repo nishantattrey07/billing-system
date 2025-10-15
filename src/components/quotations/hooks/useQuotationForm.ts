@@ -28,6 +28,29 @@ interface UseQuotationFormProps {
     city?: string | null
     state?: string | null
   }>
+  existingQuotation?: {
+    id: string
+    number: string
+    date: Date
+    subject: string
+    financialYear: string
+    companyId: string
+    companyName: string
+    companyGstin: string
+    companyAddress: string | null
+    companyPhone: string | null
+    companyState: string | null
+    customerId: string
+    customerName: string
+    customerGstin: string | null
+    customerAddress: string | null
+    customerCity: string | null
+    customerState: string | null
+    items: QuotationItem[]
+    freightCharges: number
+    termsAndConditions: string
+    status: string
+  }
 }
 
 export interface QuotationItem {
@@ -103,52 +126,91 @@ export function useQuotationForm(props?: UseQuotationFormProps) {
   // Use server-provided company if available, otherwise fall back to Zustand
   const company = props?.initialCompany || selectedCompany
 
-  const [formState, setFormState] = useState<QuotationFormState>({
-    // Initialize with defaults
-    number: 'Q.no: ',
-    date: new Date(),
-    subject: '',
-    financialYear: getCurrentFinancialYear(),
+  // If editing existing quotation, use that data; otherwise use defaults
+  const existingQuotation = props?.existingQuotation
 
-    // Company (from server props or Zustand store)
-    companyId: company?.id || '',
-    companyName: company?.name || '',
-    companyGstin: company?.gstin || '',
-    companyAddress: company?.address || '',
-    companyPhone: company?.phone || '',
-    companyState: company?.state || '',
+  const [formState, setFormState] = useState<QuotationFormState>(() => {
+    if (existingQuotation) {
+      // Initialize from existing quotation
+      const itemsSubtotal = calculateSubtotal(existingQuotation.items)
+      const gst = calculateGST(
+        itemsSubtotal,
+        existingQuotation.companyState || '',
+        existingQuotation.customerState || ''
+      )
+      const total = calculateTotal(itemsSubtotal, existingQuotation.freightCharges, gst)
+      const subtotal = itemsSubtotal + existingQuotation.freightCharges
 
-    // Customer
-    customerId: '',
-    customerName: '',
-    customerState: '',
+      return {
+        number: existingQuotation.number,
+        date: new Date(existingQuotation.date),
+        subject: existingQuotation.subject,
+        financialYear: existingQuotation.financialYear,
+        companyId: existingQuotation.companyId,
+        companyName: existingQuotation.companyName,
+        companyGstin: existingQuotation.companyGstin,
+        companyAddress: existingQuotation.companyAddress || '',
+        companyPhone: existingQuotation.companyPhone || '',
+        companyState: existingQuotation.companyState || '',
+        customerId: existingQuotation.customerId,
+        customerName: existingQuotation.customerName,
+        customerGstin: existingQuotation.customerGstin || '',
+        customerAddress: existingQuotation.customerAddress || '',
+        customerCity: existingQuotation.customerCity || '',
+        customerState: existingQuotation.customerState || '',
+        items: existingQuotation.items,
+        freightCharges: existingQuotation.freightCharges,
+        subtotal,
+        sgst: gst.sgst,
+        cgst: gst.cgst,
+        igst: gst.igst,
+        total,
+        totalInWords: numberToWords(total),
+        terms: existingQuotation.termsAndConditions,
+        safetyChecks: {
+          quotationDetails: true,
+          customerInfo: true,
+          items: existingQuotation.items.length > 0,
+          calculations: true,
+          terms: !!existingQuotation.termsAndConditions,
+        },
+        isDraft: existingQuotation.status === 'DRAFT',
+      }
+    }
 
-    // Items
-    items: [],
-
-    // Calculations
-    freightCharges: 0,
-    subtotal: 0,
-    sgst: 0,
-    cgst: 0,
-    igst: 0,
-    total: 0,
-    totalInWords: '',
-
-    // Terms - use company default terms if available
-    terms: company?.defaultTerms || '',
-
-    // Safety Checks
-    safetyChecks: {
-      quotationDetails: false,
-      customerInfo: false,
-      items: false,
-      calculations: false,
-      terms: false,
-    },
-
-    // Meta
-    isDraft: true,
+    // Default initialization for new quotation
+    return {
+      number: 'Q.no: ',
+      date: new Date(),
+      subject: '',
+      financialYear: getCurrentFinancialYear(),
+      companyId: company?.id || '',
+      companyName: company?.name || '',
+      companyGstin: company?.gstin || '',
+      companyAddress: company?.address || '',
+      companyPhone: company?.phone || '',
+      companyState: company?.state || '',
+      customerId: '',
+      customerName: '',
+      customerState: '',
+      items: [],
+      freightCharges: 0,
+      subtotal: 0,
+      sgst: 0,
+      cgst: 0,
+      igst: 0,
+      total: 0,
+      totalInWords: '',
+      terms: company?.defaultTerms || '',
+      safetyChecks: {
+        quotationDetails: false,
+        customerInfo: false,
+        items: false,
+        calculations: false,
+        terms: false,
+      },
+      isDraft: true,
+    }
   })
 
   // Watch for company changes in Zustand store and update form

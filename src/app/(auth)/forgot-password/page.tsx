@@ -1,25 +1,27 @@
-import { LoginForm } from '@/components/auth/LoginForm'
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Forgot password?</h1>
         <p className="text-muted-foreground">
-          Sign in to your billing system account
+          Enter your email address and we&apos;ll send you a link to reset your password
         </p>
       </div>
 
-      <LoginForm />
+      <ForgotPasswordForm />
 
       <div className="space-y-2 text-center text-sm">
         <p className="text-muted-foreground">
+          Remember your password?{' '}
           <Link
-            href="/forgot-password"
+            href="/login"
             className="font-medium text-primary hover:underline"
           >
-            Forgot your password?
+            Back to login
           </Link>
         </p>
         <p className="text-muted-foreground">
