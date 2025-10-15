@@ -17,11 +17,15 @@ export async function GET(
     const { id } = await params
 
     const quotation = await prisma.quotation.findUnique({
-      where: { id },
+      where: {
+        id,
+        deletedAt: null, // Only fetch non-deleted quotations
+      },
       include: {
         company: true,
         customer: true,
         items: {
+          where: { deletedAt: null }, // Only fetch non-deleted items
           orderBy: { sortOrder: 'asc' },
         },
       },
@@ -43,7 +47,7 @@ export async function PUT(
 ) {
   try {
     // Require authentication
-    const { error } = await requireAuth()
+    const { user, error } = await requireAuth()
     if (error) return error
 
     const { id } = await params
@@ -60,11 +64,16 @@ export async function PUT(
 
     // Fetch existing quotation
     const existing = await prisma.quotation.findUnique({
-      where: { id },
+      where: {
+        id,
+        deletedAt: null, // Cannot update deleted quotations
+      },
       include: {
         company: true,
         customer: true,
-        items: true,
+        items: {
+          where: { deletedAt: null },
+        },
       },
     })
 
@@ -160,6 +169,7 @@ export async function PUT(
           total: amountsToUse.total,
           terms: data.terms,
           validUntil: data.validUntil,
+          updatedBy: user!.id, // Audit trail
         },
         include: {
           company: true,
@@ -192,7 +202,10 @@ export async function PUT(
 
       // Fetch items to include in response
       const items = await tx.quotationItem.findMany({
-        where: { quotationId: id },
+        where: {
+          quotationId: id,
+          deletedAt: null,
+        },
         orderBy: { sortOrder: 'asc' },
       })
 
@@ -214,23 +227,30 @@ export async function DELETE(
 ) {
   try {
     // Require authentication
-    const { error } = await requireAuth()
+    const { user, error } = await requireAuth()
     if (error) return error
 
     const { id } = await params
 
-    // Check if quotation exists
+    // Check if quotation exists and is not already deleted
     const existing = await prisma.quotation.findUnique({
-      where: { id },
+      where: {
+        id,
+        deletedAt: null,
+      },
     })
 
     if (!existing) {
       return handleApiError(new Error('Quotation not found'))
     }
 
-    // Delete quotation (items will be cascade deleted)
-    await prisma.quotation.delete({
+    // Soft delete quotation (mark as deleted instead of removing)
+    await prisma.quotation.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        deletedBy: user!.id,
+      },
     })
 
     return successResponse({ message: 'Quotation deleted successfully' })

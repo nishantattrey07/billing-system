@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     // Build where clause with proper Prisma types
-    const where: Prisma.QuotationWhereInput = {}
+    const where: Prisma.QuotationWhereInput = {
+      deletedAt: null, // Only fetch non-deleted quotations
+    }
 
     if (companyId) {
       where.companyId = companyId
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
           },
         },
         items: {
+          where: { deletedAt: null }, // Only fetch non-deleted items
           orderBy: { sortOrder: 'asc' },
         },
       },
