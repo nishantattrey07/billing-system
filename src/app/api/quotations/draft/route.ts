@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/api/auth'
+import { successResponse, handleApiError } from '@/lib/api/error-handler'
 import { recalculateQuotationAmounts } from '@/lib/utils/quotation-calculations'
 import { getCurrentFinancialYear } from '@/lib/utils/quotation-number'
+import { logCreate } from '@/lib/utils/audit'
 
 export async function POST(request: NextRequest) {
   try {
-    const { error: authError } = await requireAuth()
+    const { user, error: authError } = await requireAuth()
     if (authError) return authError
 
     const body = await request.json()
@@ -14,7 +16,11 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!body.companyId || !body.customerName) {
       return NextResponse.json(
-        { error: 'Company ID and customer name are required' },
+        {
+          success: false,
+          error: 'validation_error',
+          message: 'Company ID and customer name are required'
+        },
         { status: 400 }
       )
     }
@@ -26,7 +32,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!company) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      return NextResponse.json({
+        success: false,
+        error: 'not_found',
+        message: 'Company not found'
+      }, { status: 404 })
     }
 
     // Calculate amounts server-side
@@ -81,22 +91,35 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      return draft
+      // Fetch items to include in audit log
+      const items = await tx.quotationItem.findMany({
+        where: { quotationId: draft.id },
+        orderBy: { sortOrder: 'asc' },
+      })
+
+      return {
+        ...draft,
+        items,
+      }
     })
 
-    return NextResponse.json(
-      {
-        success: true,
-        quotationId: quotation.id,
-        message: 'Draft saved successfully',
-      },
-      { status: 201 }
-    )
+    // Log audit trail for CREATE action
+    await logCreate({
+      entity: 'quotation',
+      entityId: quotation.id,
+      userId: user!.id,
+      userEmail: user!.email,
+      after: quotation,
+      description: `Created quotation draft ${quotation.number}`,
+      request,
+    })
+
+    return successResponse({
+      quotationId: quotation.id,
+      message: 'Draft saved successfully',
+    }, 201)
   } catch (error) {
     console.error('Save draft error:', error)
-    return NextResponse.json(
-      { error: 'Failed to save draft' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

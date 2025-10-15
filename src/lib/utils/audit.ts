@@ -6,7 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { prisma } from '@/lib/prisma'
-import { AuditAction } from '@/generated/prisma'
+import { AuditAction, Prisma } from '@/generated/prisma'
 import { NextRequest } from 'next/server'
 
 // Sensitive fields to exclude from audit logs
@@ -162,7 +162,7 @@ function extractMetadata(request?: NextRequest): {
 
 /**
  * Sanitize sensitive data from objects before logging
- * Recursively removes sensitive fields
+ * Recursively removes sensitive fields and serializes special types
  *
  * @param data - Object to sanitize
  * @param sensitiveFields - Array of field names to remove
@@ -174,6 +174,21 @@ function sanitizeData(
 ): any {
   if (data === null || data === undefined) {
     return data
+  }
+
+  // Handle Prisma Decimal type
+  if (data instanceof Prisma.Decimal) {
+    return data.toString()
+  }
+
+  // Handle Date objects
+  if (data instanceof Date) {
+    return data.toISOString()
+  }
+
+  // Handle BigInt
+  if (typeof data === 'bigint') {
+    return data.toString()
   }
 
   // Handle arrays

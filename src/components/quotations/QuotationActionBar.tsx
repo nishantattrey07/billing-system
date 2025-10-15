@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Save, Download, Mail, CheckCircle2, Loader2 } from 'lucide-react'
 import type { useQuotationForm } from './hooks/useQuotationForm'
@@ -14,8 +15,8 @@ interface QuotationActionBarProps {
 export function QuotationActionBar({ formState, safetyMode, quotationId }: QuotationActionBarProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-
-  const isEditMode = !!quotationId
+  const savedQuotationIdRef = useRef<string | null>(quotationId || null)
+  const router = useRouter()
 
   // Check if all safety checks are completed
   const allSafetyChecksComplete = safetyMode
@@ -28,7 +29,7 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
   ).length
   const totalChecks = Object.keys(formState.safetyChecks).length
 
-  const handleSave = async () => {
+  const handleSave = async (silent = false): Promise<string | null> => {
     setIsSaving(true)
 
     try {
@@ -50,10 +51,11 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
         validUntil: formState.validUntil,
       }
 
+      const currentQuotationId = savedQuotationIdRef.current
       const response = await fetch(
-        isEditMode ? `/api/quotations/${quotationId}` : '/api/quotations/draft',
+        currentQuotationId ? `/api/quotations/${currentQuotationId}` : '/api/quotations/draft',
         {
-          method: isEditMode ? 'PUT' : 'POST',
+          method: currentQuotationId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(quotationData),
         }
@@ -61,20 +63,35 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || `Failed to ${isEditMode ? 'update' : 'save'} quotation`)
+        // Handle both old and new error response formats
+        const errorMessage = error.message || error.error || `Failed to ${currentQuotationId ? 'update' : 'save'} quotation`
+        throw new Error(errorMessage)
       }
 
-      await response.json()
+      const result = await response.json()
+
+      // Extract quotation ID from response (handles both { success, data } and { success, quotationId } formats)
+      const newQuotationId = result.data?.quotationId || result.quotationId || currentQuotationId
+
+      // Store the quotation ID for future saves
+      if (newQuotationId) {
+        savedQuotationIdRef.current = newQuotationId
+      }
 
       // Update lastSaved timestamp
       formState.updateField('lastSaved', new Date())
 
-      const { toast } = await import('sonner')
-      toast.success(`Quotation ${isEditMode ? 'updated' : 'saved'} successfully!`)
+      if (!silent) {
+        const { toast } = await import('sonner')
+        toast.success(`Quotation ${currentQuotationId ? 'updated' : 'saved'} successfully!`)
+      }
+
+      return newQuotationId
     } catch (error) {
       console.error('Save error:', error)
       const { toast } = await import('sonner')
-      toast.error(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'save'} quotation`)
+      toast.error(error instanceof Error ? error.message : `Failed to ${savedQuotationIdRef.current ? 'update' : 'save'} quotation`)
+      return null
     } finally {
       setIsSaving(false)
     }
@@ -86,48 +103,24 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
     setIsGeneratingPDF(true)
 
     try {
-      // Prepare quotation data for server
-      const quotationData = {
-        companyName: formState.companyName,
-        companyGstin: formState.companyGstin,
-        companyAddress: formState.companyAddress,
-        companyPhone: formState.companyPhone,
-        companyState: formState.companyState,
-        number: formState.number,
-        date: formState.date,
-        validUntil: formState.validUntil,
-        financialYear: formState.financialYear,
-        subject: formState.subject,
-        customerName: formState.customerName,
-        customerGstin: formState.customerGstin,
-        customerAddress: formState.customerAddress,
-        customerCity: formState.customerCity,
-        customerState: formState.customerState,
-        items: formState.items,
-        freightCharges: formState.freightCharges,
-        subtotal: formState.subtotal,
-        sgst: formState.sgst,
-        cgst: formState.cgst,
-        igst: formState.igst,
-        total: formState.total,
-        totalInWords: formState.totalInWords,
-        terms: formState.terms,
+      // Step 1: Auto-save quotation before generating PDF
+      const { toast } = await import('sonner')
+
+      // Save quotation (creates or updates in database with audit log)
+      const savedId = await handleSave(true) // silent = true to avoid double toast
+
+      if (!savedId) {
+        throw new Error('Failed to save quotation before generating PDF')
       }
 
-      // Call server API to generate PDF
-      const response = await fetch('/api/quotations/pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quotationData),
-      })
+      // Step 2: Generate PDF using the saved quotation ID
+      const response = await fetch(`/api/quotations/pdf?id=${savedId}`)
 
       if (!response.ok) {
         let errorMessage = 'Failed to generate PDF'
         try {
           const error = await response.json()
-          errorMessage = error.error || error.details || errorMessage
+          errorMessage = error.error || error.details || error.message || errorMessage
         } catch {
           // If response is not JSON, try to get text
           const text = await response.text()
@@ -147,9 +140,15 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
 
-      // Success notification (using sonner)
-      const { toast } = await import('sonner')
-      toast.success('PDF generated successfully!')
+      // Success notification
+      toast.success('Quotation saved and PDF downloaded successfully!')
+
+      // If this was a new quotation, redirect to edit page with the new ID
+      if (!quotationId && savedId) {
+        setTimeout(() => {
+          router.push(`/dashboard/quotations/${savedId}/edit`)
+        }, 1000)
+      }
     } catch (error) {
       console.error('Error generating PDF:', error)
       const { toast } = await import('sonner')
@@ -189,16 +188,16 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
         {/* Right Side - Action Buttons */}
         <div className="flex items-center gap-3">
           {/* Save/Update */}
-          <Button variant="outline" onClick={handleSave} disabled={isSaving}>
+          <Button variant="outline" onClick={() => handleSave()} disabled={isSaving}>
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {isEditMode ? 'Updating...' : 'Saving...'}
+                {savedQuotationIdRef.current ? 'Updating...' : 'Saving...'}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                {isEditMode ? 'Update Quotation' : 'Save Draft'}
+                {savedQuotationIdRef.current || quotationId ? 'Update Quotation' : 'Save Draft'}
               </>
             )}
           </Button>
@@ -218,12 +217,12 @@ export function QuotationActionBar({ formState, safetyMode, quotationId }: Quota
             {isGeneratingPDF ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating PDF...
+                {savedQuotationIdRef.current ? 'Updating & Generating...' : 'Saving & Generating...'}
               </>
             ) : (
               <>
                 <Download className="w-4 h-4 mr-2" />
-                Download PDF
+                {savedQuotationIdRef.current || quotationId ? 'Download PDF' : 'Save & Download PDF'}
               </>
             )}
           </Button>
