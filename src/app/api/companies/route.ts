@@ -5,6 +5,7 @@ import { handleApiError, successResponse } from '@/lib/api/error-handler'
 import { parsePaginationParams, processCursorPagination } from '@/lib/api/cursor-pagination'
 import { convertEmptyStringsToUndefined } from '@/lib/api/transform-data'
 import { requireAuth } from '@/lib/api/auth'
+import { logCreate } from '@/lib/utils/audit'
 
 
 export async function GET(request: NextRequest) {
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     const where = search
       ? {
+          deletedAt: null, // Only fetch non-deleted companies
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
             { gstin: { contains: search, mode: 'insensitive' as const } },
@@ -26,9 +28,9 @@ export async function GET(request: NextRequest) {
             { email: { contains: search, mode: 'insensitive' as const } },
           ],
         }
-      : {}
+      : { deletedAt: null } // Only fetch non-deleted companies
 
-    
+
     const companies = await prisma.company.findMany({
       where,
       take: limit + 1,
@@ -68,6 +70,17 @@ export async function POST(request: NextRequest) {
         ...data,
         userId: (user as { id: string }).id,
       },
+    })
+
+    // Log audit trail for CREATE action
+    await logCreate({
+      entity: 'company',
+      entityId: company.id,
+      userId: user.id,
+      userEmail: user.email,
+      after: company,
+      description: `Created company ${company.name}`,
+      request,
     })
 
     return successResponse(company, 201)

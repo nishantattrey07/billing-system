@@ -7,6 +7,7 @@ import { parsePaginationParams, processCursorPagination } from '@/lib/api/cursor
 import { requireAuth } from '@/lib/api/auth'
 import { recalculateQuotationAmounts } from '@/lib/utils/quotation-calculations'
 import { getCurrentFinancialYear } from '@/lib/utils/quotation-number'
+import { logCreate } from '@/lib/utils/audit'
 
 export async function GET(request: NextRequest) {
   try {
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    const { error } = await requireAuth()
+    const { user, error } = await requireAuth()
     if (error) return error
 
     const body = await request.json()
@@ -197,6 +198,17 @@ export async function POST(request: NextRequest) {
         ...newQuotation,
         items,
       }
+    })
+
+    // Log audit trail for CREATE action
+    await logCreate({
+      entity: 'quotation',
+      entityId: quotation.id,
+      userId: user!.id,
+      userEmail: user!.email,
+      after: quotation,
+      description: `Created quotation ${quotation.number}`,
+      request,
     })
 
     return successResponse(quotation, 201)

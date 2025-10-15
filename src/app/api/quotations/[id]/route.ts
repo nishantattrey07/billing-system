@@ -4,6 +4,7 @@ import { quotationSchema } from '@/lib/validation/schemas/quotation.schema'
 import { handleApiError, successResponse } from '@/lib/api/error-handler'
 import { requireAuth } from '@/lib/api/auth'
 import { recalculateQuotationAmounts } from '@/lib/utils/quotation-calculations'
+import { logUpdate } from '@/lib/utils/audit'
 
 export async function GET(
   request: NextRequest,
@@ -213,6 +214,18 @@ export async function PUT(
         ...updated,
         items,
       }
+    })
+
+    // Log audit trail for UPDATE action
+    await logUpdate({
+      entity: 'quotation',
+      entityId: id,
+      userId: user!.id,
+      userEmail: user!.email,
+      before: existing,
+      after: quotation,
+      description: `Updated quotation ${quotation.number}`,
+      request,
     })
 
     return successResponse(quotation)

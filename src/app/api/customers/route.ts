@@ -5,6 +5,7 @@ import { handleApiError, successResponse } from '@/lib/api/error-handler'
 import { parsePaginationParams, processCursorPagination } from '@/lib/api/cursor-pagination'
 import { convertEmptyStringsToUndefined } from '@/lib/api/transform-data'
 import { requireAuth } from '@/lib/api/auth'
+import { logCreate } from '@/lib/utils/audit'
 
 
 export async function GET(request: NextRequest) {
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
 
     const where = search
       ? {
+          deletedAt: null, // Only fetch non-deleted customers
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
             { gstin: { contains: search, mode: 'insensitive' as const } },
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
             { contactPerson: { contains: search, mode: 'insensitive' as const } },
           ],
         }
-      : {}
+      : { deletedAt: null } // Only fetch non-deleted customers
 
 
     const customers = await prisma.customer.findMany({
@@ -70,6 +72,17 @@ export async function POST(request: NextRequest) {
         ...data,
         userId: (user as { id: string }).id,
       },
+    })
+
+    // Log audit trail for CREATE action
+    await logCreate({
+      entity: 'customer',
+      entityId: customer.id,
+      userId: user.id,
+      userEmail: user.email,
+      after: customer,
+      description: `Created customer ${customer.name}`,
+      request,
     })
 
     return successResponse(customer, 201)
