@@ -254,8 +254,10 @@ export function useQuotationForm(props?: UseQuotationFormProps) {
 
     const subtotal = calculateSubtotal(itemsWithAmounts)
 
+    // Calculate GST on taxable amount (subtotal + freight) as per Indian GST law
+    const taxableAmount = subtotal + formState.freightCharges
     const gst = calculateGST(
-      subtotal + formState.freightCharges,
+      taxableAmount,
       formState.companyState || '',
       formState.customerState || ''
     )

@@ -62,17 +62,25 @@ export function calculateSubtotal(items: QuotationItem[]): number {
 
 /**
  * Calculate GST based on company and customer states
- * Same state: SGST 9% + CGST 9%
- * Different state: IGST 18%
- * Returns amounts with 3 decimal places
+ *
+ * IMPORTANT: As per Indian GST regulations, GST is calculated on the taxable amount
+ * which includes BOTH the subtotal AND freight charges (if any).
+ *
+ * Same state (intra-state): SGST 9% + CGST 9% = 18%
+ * Different state (inter-state): IGST 18%
+ *
+ * @param taxableAmount - Subtotal + Freight charges (the base amount on which GST is calculated)
+ * @param companyState - State of the company (seller)
+ * @param customerState - State of the customer (buyer)
+ * @returns Object with sgst, cgst, and igst amounts (with 3 decimal places)
  */
 export function calculateGST(
-  subtotal: number,
+  taxableAmount: number,
   companyState: string,
   customerState: string
 ): GSTResult {
-  if (subtotal < 0) {
-    throw new Error('Subtotal cannot be negative')
+  if (taxableAmount < 0) {
+    throw new Error('Taxable amount cannot be negative')
   }
 
   // Normalize state names for comparison (trim and lowercase)
@@ -82,9 +90,9 @@ export function calculateGST(
   const isSameState = normalizedCompanyState === normalizedCustomerState && normalizedCompanyState !== ''
 
   if (isSameState) {
-    // Intra-state: SGST + CGST
-    const sgst = Number((subtotal * 0.09).toFixed(3))
-    const cgst = Number((subtotal * 0.09).toFixed(3))
+    // Intra-state: SGST + CGST (9% each)
+    const sgst = Number((taxableAmount * 0.09).toFixed(3))
+    const cgst = Number((taxableAmount * 0.09).toFixed(3))
 
     return {
       sgst,
@@ -92,8 +100,8 @@ export function calculateGST(
       igst: 0,
     }
   } else {
-    // Inter-state: IGST
-    const igst = Number((subtotal * 0.18).toFixed(3))
+    // Inter-state: IGST (18%)
+    const igst = Number((taxableAmount * 0.18).toFixed(3))
 
     return {
       sgst: 0,
@@ -228,6 +236,8 @@ export function numberToWords(amount: number): string {
 /**
  * Recalculate all amounts for a quotation
  * Used to ensure consistency after edits
+ *
+ * IMPORTANT: GST is calculated on (subtotal + freightCharges) as per Indian GST law
  */
 export function recalculateQuotationAmounts(
   items: QuotationItem[],
@@ -245,8 +255,11 @@ export function recalculateQuotationAmounts(
   // Calculate subtotal
   const subtotal = calculateSubtotal(itemsWithAmounts)
 
-  // Calculate GST
-  const gst = calculateGST(subtotal, companyState, customerState)
+  // Calculate taxable amount (subtotal + freight) - GST is applied on this
+  const taxableAmount = subtotal + freightCharges
+
+  // Calculate GST on taxable amount (subtotal + freight)
+  const gst = calculateGST(taxableAmount, companyState, customerState)
 
   // Calculate total
   const total = calculateTotal(subtotal, freightCharges, gst)
